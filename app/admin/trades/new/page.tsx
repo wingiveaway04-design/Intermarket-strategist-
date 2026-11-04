@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 const markets=["forex","commodities","equities","indices","cryptocurrency","fixed_income","other"];
 
 export default function AdminNewTradePage(){
- const router=useRouter(); const [error,setError]=useState(""); const [saving,setSaving]=useState(false);
+ const router=useRouter(); const [error,setError]=useState(""); const [saving,setSaving]=useState(false); const [imageName,setImageName]=useState("");
  async function save(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");const f=new FormData(e.currentTarget);const supabase=createClient();
   const {data:{user}}=await supabase.auth.getUser();if(!user){setError("Please sign in.");setSaving(false);return;}
@@ -25,6 +25,14 @@ export default function AdminNewTradePage(){
   if(err||!trade){setError(err?.message||"Could not save this post. Confirm your account has administrator access.");setSaving(false);return;}
   const targets=[f.get("tp1"),f.get("tp2"),f.get("tp3")].filter(v=>v&&String(v).trim());
   if(targets.length){const {error:te}=await supabase.from("trade_targets").insert(targets.map((p,i)=>({public_trade_id:trade.id,target_number:i+1,price:Number(p)})));if(te){setError("Trade saved, but targets failed: "+te.message);setSaving(false);return;}}
+  if(image instanceof File&&image.size>0){
+   const ext=image.type==="image/png"?"png":image.type==="image/webp"?"webp":"jpg";
+   const path=user.id+"/"+trade.id+"/"+crypto.randomUUID()+"."+ext;
+   const {error:up}=await supabase.storage.from("public-trade-images").upload(path,image,{contentType:image.type,cacheControl:"3600",upsert:false});
+   if(up){setError("Trade saved, but screenshot upload failed: "+up.message);setSaving(false);return;}
+   const {error:ie}=await supabase.from("images").insert({owner_id:user.id,public_trade_id:trade.id,storage_path:path,visibility:"public"});
+   if(ie){setError("Trade saved, but screenshot record failed: "+ie.message);setSaving(false);return;}
+  }
   router.push("/admin");router.refresh();
  }
  return <main className="min-h-screen px-5 py-10 md:px-12"><div className="mx-auto max-w-3xl"><Link href="/admin" className="text-xs text-blue-300">← ADMIN WORKSPACE</Link><h1 className="mt-5 text-3xl font-semibold">Create official trade post</h1><p className="mt-2 text-sm text-slate-400">Only administrator accounts can publish to the public website.</p><form onSubmit={save} className="mt-8 grid gap-4 rounded-xl border border-white/10 bg-[#101a2a] p-5 sm:grid-cols-2">
@@ -36,6 +44,7 @@ export default function AdminNewTradePage(){
   <label className="text-sm">Entry price<input name="entry" type="number" step="any" className="field mt-2"/></label><label className="text-sm">Stop loss<input name="stop" type="number" step="any" className="field mt-2"/></label>
   {["tp1","tp2","tp3"].map((x,i)=><label key={x} className="text-sm">Take profit {i+1}<input name={x} type="number" step="any" className="field mt-2"/></label>)}
   <label className="text-sm sm:col-span-2">Trade thesis<textarea name="thesis" rows={3} className="field mt-2"/></label><label className="text-sm sm:col-span-2">Fundamental analysis<textarea name="fundamental" rows={4} className="field mt-2"/></label><label className="text-sm sm:col-span-2">Intermarket analysis<textarea name="intermarket" rows={4} className="field mt-2"/></label>
+  <label className="text-sm sm:col-span-2">Setup screenshot<input name="setup_image" type="file" accept="image/jpeg,image/png,image/webp" className="field mt-2" onChange={e=>setImageName(e.target.files?.[0]?.name||"")}/><span className="mt-1 block text-xs text-slate-500">JPG, PNG or WEBP · Maximum 8 MB · Visible with this public setup when published.</span>{imageName&&<span className="mt-1 block text-xs text-blue-300">Selected: {imageName}</span>}</label>
   {error&&<p role="alert" className="text-sm text-rose-300 sm:col-span-2">{error}</p>}<div className="flex gap-3 sm:col-span-2"><button disabled={saving} className="rounded-lg bg-blue-500 px-5 py-3 text-sm font-semibold disabled:opacity-50">{saving?"Saving...":"Save official trade"}</button><Link href="/admin" className="rounded-lg border border-white/15 px-5 py-3 text-sm">Cancel</Link></div>
  </form></div></main>;
 }
