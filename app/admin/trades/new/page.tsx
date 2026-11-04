@@ -14,10 +14,16 @@ export default function AdminNewTradePage(){
   const {data:{user}}=await supabase.auth.getUser();if(!user){setError("Please sign in.");setSaving(false);return;}
   const image=f.get("setup_image");
   if(image instanceof File&&image.size>0){
-   const ext=image.name.split(".").pop()?.toLowerCase()||"";
-   const allowed=["jpg","jpeg","png","webp","gif","avif","heic","heif","bmp","tif","tiff","ico"];
-   if((image.type&&!image.type.startsWith("image/"))||image.type==="image/svg+xml"||!allowed.includes(ext)||image.size>50*1024*1024){
-    setError("Choose a supported image (JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO) up to 50 MB. SVG files are not accepted.");
+   const extension=image.name.split(".").pop()?.toLowerCase()||"";
+   const contentTypes:Record<string,string>={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",avif:"image/avif",heic:"image/heic",heif:"image/heif",bmp:"image/bmp",tif:"image/tiff",tiff:"image/tiff",ico:"image/x-icon"};
+   const mimeExtensions:Record<string,string>={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","image/avif":"avif","image/heic":"heic","image/heif":"heif","image/bmp":"bmp","image/tiff":"tiff","image/x-icon":"ico","image/vnd.microsoft.icon":"ico"};
+   if(extension==="svg"||image.type==="image/svg+xml"||image.size>50*1024*1024){
+    setError("Choose a supported raster image (JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO) up to 50 MB. SVG files are not accepted.");
+    setSaving(false);return;
+   }
+   const ext=contentTypes[extension]?extension:(mimeExtensions[image.type]||"");
+   if(!ext){
+    setError("This file format is not recognised as a supported image. Please save the TradingView chart as PNG or JPG and try again.");
     setSaving(false);return;
    }
   }
@@ -35,9 +41,11 @@ export default function AdminNewTradePage(){
   const targets=[f.get("tp1"),f.get("tp2"),f.get("tp3")].filter(v=>v&&String(v).trim());
   if(targets.length){const {error:te}=await supabase.from("trade_targets").insert(targets.map((p,i)=>({public_trade_id:trade.id,target_number:i+1,price:Number(p)})));if(te){setError("Trade saved, but targets failed: "+te.message);setSaving(false);return;}}
   if(image instanceof File&&image.size>0){
-   const ext=image.name.split(".").pop()?.toLowerCase()||"jpg";
+   const extension=image.name.split(".").pop()?.toLowerCase()||"";
    const contentTypes:Record<string,string>={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",avif:"image/avif",heic:"image/heic",heif:"image/heif",bmp:"image/bmp",tif:"image/tiff",tiff:"image/tiff",ico:"image/x-icon"};
-   const contentType=contentTypes[ext]||image.type;
+   const mimeExtensions:Record<string,string>={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","image/avif":"avif","image/heic":"heic","image/heif":"heif","image/bmp":"bmp","image/tiff":"tiff","image/x-icon":"ico","image/vnd.microsoft.icon":"ico"};
+   const ext=contentTypes[extension]?extension:(mimeExtensions[image.type]||"");
+   const contentType=contentTypes[ext];
    const path=user.id+"/"+trade.id+"/"+crypto.randomUUID()+"."+ext;
    const {error:up}=await supabase.storage.from("public-trade-images").upload(path,image,{contentType,cacheControl:"3600",upsert:false});
    if(up){setError("Trade saved, but screenshot upload failed: "+up.message);setSaving(false);return;}
