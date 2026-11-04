@@ -13,7 +13,14 @@ export default function AdminNewTradePage(){
   e.preventDefault();setSaving(true);setError("");const f=new FormData(e.currentTarget);const supabase=createClient();
   const {data:{user}}=await supabase.auth.getUser();if(!user){setError("Please sign in.");setSaving(false);return;}
   const image=f.get("setup_image");
-  if(image instanceof File&&image.size>0&&(!["image/jpeg","image/png","image/webp"].includes(image.type)||image.size>8*1024*1024)){setError("Choose a JPG, PNG or WEBP image smaller than 8 MB.");setSaving(false);return;}
+  if(image instanceof File&&image.size>0){
+   const ext=image.name.split(".").pop()?.toLowerCase()||"";
+   const allowed=["jpg","jpeg","png","webp","gif","avif","heic","heif","bmp","tif","tiff","ico"];
+   if(!image.type.startsWith("image/")||image.type==="image/svg+xml"||!allowed.includes(ext)||image.size>50*1024*1024){
+    setError("Choose a supported image (JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO) up to 50 MB. SVG files are not accepted.");
+    setSaving(false);return;
+   }
+  }
   const instrument=String(f.get("instrument")||"").trim().toUpperCase();
   const slug=instrument.toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+Date.now().toString(36);
   const numeric=(v:FormDataEntryValue|null)=>v&&String(v).trim()?Number(v):null;
@@ -28,9 +35,11 @@ export default function AdminNewTradePage(){
   const targets=[f.get("tp1"),f.get("tp2"),f.get("tp3")].filter(v=>v&&String(v).trim());
   if(targets.length){const {error:te}=await supabase.from("trade_targets").insert(targets.map((p,i)=>({public_trade_id:trade.id,target_number:i+1,price:Number(p)})));if(te){setError("Trade saved, but targets failed: "+te.message);setSaving(false);return;}}
   if(image instanceof File&&image.size>0){
-   const ext=image.type==="image/png"?"png":image.type==="image/webp"?"webp":"jpg";
+   const ext=image.name.split(".").pop()?.toLowerCase()||"jpg";
+   const contentTypes:Record<string,string>={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",avif:"image/avif",heic:"image/heic",heif:"image/heif",bmp:"image/bmp",tif:"image/tiff",tiff:"image/tiff",ico:"image/x-icon"};
+   const contentType=contentTypes[ext]||image.type;
    const path=user.id+"/"+trade.id+"/"+crypto.randomUUID()+"."+ext;
-   const {error:up}=await supabase.storage.from("public-trade-images").upload(path,image,{contentType:image.type,cacheControl:"3600",upsert:false});
+   const {error:up}=await supabase.storage.from("public-trade-images").upload(path,image,{contentType,cacheControl:"3600",upsert:false});
    if(up){setError("Trade saved, but screenshot upload failed: "+up.message);setSaving(false);return;}
    const {error:ie}=await supabase.from("images").insert({owner_id:user.id,public_trade_id:trade.id,storage_path:path,visibility:"public"});
    if(ie){setError("Trade saved, but screenshot record failed: "+ie.message);setSaving(false);return;}
@@ -46,7 +55,7 @@ export default function AdminNewTradePage(){
   <label className="text-sm">Entry price<input name="entry" type="number" step="any" className="field mt-2"/></label><label className="text-sm">Stop loss<input name="stop" type="number" step="any" className="field mt-2"/></label>
   {["tp1","tp2","tp3"].map((x,i)=><label key={x} className="text-sm">Take profit {i+1}<input name={x} type="number" step="any" className="field mt-2"/></label>)}
   <label className="text-sm sm:col-span-2">Trade thesis<textarea name="thesis" rows={3} className="field mt-2"/></label><label className="text-sm sm:col-span-2">Fundamental analysis<textarea name="fundamental" rows={4} className="field mt-2"/></label><label className="text-sm sm:col-span-2">Intermarket analysis<textarea name="intermarket" rows={4} className="field mt-2"/></label>
-  <label className="text-sm sm:col-span-2">Setup screenshot<input name="setup_image" type="file" accept="image/jpeg,image/png,image/webp" className="field mt-2" onChange={e=>setImageName(e.target.files?.[0]?.name||"")}/><span className="mt-1 block text-xs text-slate-500">JPG, PNG or WEBP · Maximum 8 MB · Visible with this public setup when published.</span>{imageName&&<span className="mt-1 block text-xs text-blue-300">Selected: {imageName}</span>}</label>
+  <label className="text-sm sm:col-span-2">Setup screenshot<input name="setup_image" type="file" accept="image/*" className="field mt-2" onChange={e=>setImageName(e.target.files?.[0]?.name||"")}/><span className="mt-1 block text-xs text-slate-500">JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO · Maximum 50 MB · Visible with this public setup when published.</span>{imageName&&<span className="mt-1 block text-xs text-blue-300">Selected: {imageName}</span>}</label>
   {error&&<p role="alert" className="text-sm text-rose-300 sm:col-span-2">{error}</p>}<div className="flex gap-3 sm:col-span-2"><button disabled={saving} className="rounded-lg bg-blue-500 px-5 py-3 text-sm font-semibold disabled:opacity-50">{saving?"Saving...":"Save official trade"}</button><Link href="/admin" className="rounded-lg border border-white/15 px-5 py-3 text-sm">Cancel</Link></div>
  </form></div></main>;
 }
