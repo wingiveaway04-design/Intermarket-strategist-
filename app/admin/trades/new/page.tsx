@@ -12,6 +12,8 @@ export default function AdminNewTradePage(){
  async function save(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");const f=new FormData(e.currentTarget);const supabase=createClient();
   const {data:{user}}=await supabase.auth.getUser();if(!user){setError("Please sign in.");setSaving(false);return;}
+  const image=f.get("setup_image");
+  if(image instanceof File&&image.size>0&&(!["image/jpeg","image/png","image/webp"].includes(image.type)||image.size>8*1024*1024)){setError("Choose a JPG, PNG or WEBP image smaller than 8 MB.");setSaving(false);return;}
   const instrument=String(f.get("instrument")||"").trim().toUpperCase();
   const slug=instrument.toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+Date.now().toString(36);
   const numeric=(v:FormDataEntryValue|null)=>v&&String(v).trim()?Number(v):null;
