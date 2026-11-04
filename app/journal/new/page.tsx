@@ -13,7 +13,7 @@ export default function NewTradePage(){
   if(image instanceof File&&image.size>0){
    const ext=image.name.split(".").pop()?.toLowerCase()||"";
    const allowed=["jpg","jpeg","png","webp","gif","avif","heic","heif","bmp","tif","tiff","ico"];
-   if(!image.type.startsWith("image/")||image.type==="image/svg+xml"||!allowed.includes(ext)||image.size>50*1024*1024){
+   if((image.type&&!image.type.startsWith("image/"))||image.type==="image/svg+xml"||!allowed.includes(ext)||image.size>50*1024*1024){
     setError("Choose a supported image (JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO) up to 50 MB. SVG files are not accepted.");
     setSaving(false);return;
    }
