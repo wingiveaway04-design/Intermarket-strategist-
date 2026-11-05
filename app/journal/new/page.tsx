@@ -13,7 +13,7 @@ export default function NewTradePage(){
   if(image instanceof File&&image.size>0){
    const ext=image.name.split(".").pop()?.toLowerCase()||"";
    const allowed=["jpg","jpeg","png","webp","gif","avif","heic","heif","bmp","tif","tiff","ico"];
-   if((image.type&&!image.type.startsWith("image/"))||image.type==="image/svg+xml"||!allowed.includes(ext)||image.size>50*1024*1024){
+   if(image.type==="image/svg+xml"||!allowed.includes(ext)||image.size>50*1024*1024){
     setError("Choose a supported image (JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO) up to 50 MB. SVG files are not accepted.");
     setSaving(false);return;
    }
@@ -26,7 +26,7 @@ export default function NewTradePage(){
   if(image instanceof File&&image.size>0){
    const ext=image.name.split(".").pop()?.toLowerCase()||"jpg";
    const contentTypes:Record<string,string>={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",avif:"image/avif",heic:"image/heic",heif:"image/heif",bmp:"image/bmp",tif:"image/tiff",tiff:"image/tiff",ico:"image/x-icon"};
-   const contentType=contentTypes[ext]||image.type;const path=user.id+"/"+trade.id+"/"+crypto.randomUUID()+"."+ext;
+   const contentType=contentTypes[ext]||image.type||"image/jpeg";const path=user.id+"/"+trade.id+"/"+crypto.randomUUID()+"."+ext;
    const {error:up}=await supabase.storage.from("trade-journal").upload(path,image,{contentType,cacheControl:"3600",upsert:false});
    if(up){setError("Trade saved, but screenshot upload failed: "+up.message);setSaving(false);return;}
    const {error:ie}=await supabase.from("images").insert({owner_id:user.id,private_trade_id:trade.id,storage_path:path,visibility:"private"});
@@ -44,7 +44,7 @@ export default function NewTradePage(){
 <label className="text-sm sm:col-span-2">Trade thesis<textarea name="thesis" rows={3} placeholder="Why are you taking this trade?" className="field mt-2"/></label>
 <label className="text-sm sm:col-span-2">Fundamental analysis<textarea name="fundamental" rows={4} placeholder="Macro data, central-bank expectations and fundamental drivers..." className="field mt-2"/></label>
 <label className="text-sm sm:col-span-2">Intermarket analysis<textarea name="intermarket" rows={4} placeholder="DXY, yields, equities, commodities and cross-market signals..." className="field mt-2"/></label>
-<label className="text-sm sm:col-span-2">Setup screenshot<input name="setup_image" type="file" accept="image/*" className="field mt-2" onChange={e=>setImageName(e.target.files?.[0]?.name||"")}/><span className="mt-1 block text-xs text-slate-500">JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO · Maximum 50 MB · Private to your journal</span>{imageName&&<span className="mt-1 block text-xs text-blue-300">Selected: {imageName}</span>}</label>
+<label className="text-sm sm:col-span-2">Setup screenshot<input name="setup_image" type="file" accept="image/*" className="field mt-2" onChange={e=>setImageName(e.target.files?.[0]?.name||"")}/><span className="mt-1 block text-xs text-slate-500">TradingView JPG/JPEG and other common chart images accepted · Up to 50 MB · Private to your journal</span>{imageName&&<span className="mt-1 block text-xs text-blue-300">Selected: {imageName}</span>}</label>
 {error&&<p role="alert" className="text-sm text-rose-300 sm:col-span-2">{error}</p>}<div className="flex gap-3 sm:col-span-2"><button disabled={saving} className="rounded-lg bg-blue-500 px-5 py-3 text-sm font-semibold disabled:opacity-50">{saving?"Saving...":"Save private trade"}</button><Link href="/dashboard" className="rounded-lg border border-white/15 px-5 py-3 text-sm">Cancel</Link></div>
 </form></div></main>;
 }
