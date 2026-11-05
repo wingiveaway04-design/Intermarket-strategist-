@@ -15,9 +15,16 @@ revoke insert,delete on public.notifications from anon,authenticated;
 revoke update on public.notifications from authenticated;\ngrant select on public.notifications to authenticated;\ngrant update(read_at) on public.notifications to authenticated;
 
 create schema if not exists private;
-create or replace function private.user_has_premium(target_user uuid) returns boolean language sql stable security definer set search_path=''
-as $$ select exists(select 1 from public.subscriptions s where s.user_id=target_user and s.status='active' and (s.current_period_end is null or s.current_period_end>now())) or exists(select 1 from public.subscription_gifts g where g.user_id=target_user and g.revoked_at is null and g.starts_at<=now() and g.expires_at>now()); $$;
-revoke all on function private.user_has_premium(uuid) from public,anon,authenticated;
+create or replace function private.user_has_premium(target_user uuid) returns boolean language plpgsql stable security definer set search_path=''
+as $
+begin
+ if target_user is distinct from (select auth.uid()) and not public.is_admin() then raise exception 'You may only check your own Premium access' using errcode='42501'; end if;
+ return exists(select 1 from public.subscriptions s where s.user_id=target_user and s.status='active' and (s.current_period_end is null or s.current_period_end>now())) or exists(select 1 from public.subscription_gifts g where g.user_id=target_user and g.revoked_at is null and g.starts_at<=now() and g.expires_at>now());
+end;
+$;
+grant usage on schema private to authenticated;
+grant execute on function private.user_has_premium(uuid) to authenticated;
+revoke all on function private.user_has_premium(uuid) from anon;
 
 alter table public.analysis_articles add column if not exists is_premium_only boolean not null default false;
 create or replace function public.notify_published_content() returns trigger language plpgsql security definer set search_path=''
