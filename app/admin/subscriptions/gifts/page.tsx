@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Member = { user_id:string; email:string; display_name:string|null };
+type Member = { user_id:string; email:string; display_name:string|null; username:string };
 type Gift = { gift_id:string; user_id:string; email:string; display_name:string|null; starts_at:string; expires_at:string; reason:string|null; revoked_at:string|null; granted_by_email:string|null };
 
 export default function AdminGiftsPage(){
@@ -26,10 +26,10 @@ export default function AdminGiftsPage(){
  useEffect(()=>{void loadGifts();},[loadGifts]);
  async function search(){
    setError("");setMessage("");
-   if(term.trim().length<3){setMembers([]);setError("Enter at least 3 characters to search.");return;}
+   if(term.trim().length<2){setMembers([]);setError("Enter at least 2 characters to search.");return;}
    setBusy(true);
    const {data,error}=await supabase.rpc("admin_search_users",{search_term:term.trim()});
-   if(error)setError(error.message);else setMembers((data||[]) as Member[]);
+   if(error)setError(error.message);else {const found=(data||[]) as Member[];setMembers(found);if(found.length===0)setMessage("No registered member matched that email, username or display name.");}
    setBusy(false);
  }
  async function grant(){
@@ -56,8 +56,8 @@ export default function AdminGiftsPage(){
   <section className="mt-8 rounded-2xl border border-white/10 bg-slate-900/70 p-5 md:p-6">
    <h2 className="text-lg font-semibold">Grant a Premium gift</h2>
    <p className="mt-1 text-sm text-slate-400">Search by the member's email, username or display name.</p>
-   <div className="mt-4 flex flex-col gap-3 sm:flex-row"><input value={term} onChange={e=>setTerm(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();void search();}}} placeholder="Search registered members..." className="field flex-1"/><button onClick={search} disabled={busy} className="rounded-lg bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">Search members</button></div>
-   {members.length>0&&<div className="mt-3 divide-y divide-white/10 rounded-xl border border-white/10">{members.map(m=><button key={m.user_id} onClick={()=>setSelected(m)} className={"flex w-full items-center justify-between gap-3 p-3 text-left text-sm hover:bg-white/5 "+(selected?.user_id===m.user_id?"bg-cyan-400/10":"")}><span><span className="block font-medium">{m.display_name||"Member"}</span><span className="text-xs text-slate-400">{m.email}</span></span><span className="text-xs text-cyan-300">{selected?.user_id===m.user_id?"Selected":"Select"}</span></button>)}</div>}
+   <div className="mt-4 flex flex-col gap-3 sm:flex-row"><input value={term} onChange={e=>setTerm(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();void search();}}} placeholder="Enter email, username or display name..." className="field flex-1"/><button onClick={search} disabled={busy} className="rounded-lg bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">Search members</button></div>
+   {members.length>0&&<div className="mt-3 divide-y divide-white/10 rounded-xl border border-white/10">{members.map(m=><button key={m.user_id} onClick={()=>setSelected(m)} className={"flex w-full items-center justify-between gap-3 p-3 text-left text-sm hover:bg-white/5 "+(selected?.user_id===m.user_id?"bg-cyan-400/10":"")}><span><span className="block font-medium">{m.display_name||"Member"}</span><span className="text-xs text-slate-400">{m.email}{m.username?" · @"+m.username:""}</span></span><span className="text-xs text-cyan-300">{selected?.user_id===m.user_id?"Selected":"Select"}</span></button>)}</div>}
    {selected&&<div className="mt-5 rounded-xl border border-cyan-300/20 bg-cyan-400/5 p-4"><p className="text-xs uppercase tracking-wider text-cyan-300">Selected member</p><p className="mt-1 font-semibold">{selected.email}</p><div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-sm">Gift duration<select value={duration} onChange={e=>setDuration(e.target.value)} className="field mt-2"><option value="1">1 month</option><option value="6">6 months</option><option value="12">12 months</option></select></label><label className="text-sm">Internal reason (optional)<input value={reason} onChange={e=>setReason(e.target.value)} maxLength={240} className="field mt-2" placeholder="e.g. Founding member reward"/></label></div><div className="mt-4 flex flex-wrap gap-3"><button onClick={grant} disabled={busy} className="rounded-lg bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">{busy?"Processing...":"Grant Premium access"}</button><button onClick={()=>setSelected(null)} className="rounded-lg border border-white/15 px-5 py-3 text-sm">Cancel</button></div></div>}
    {message&&<p role="status" className="mt-4 text-sm text-emerald-300">{message}</p>}{error&&<p role="alert" className="mt-4 text-sm text-rose-300">{error}</p>}
   </section>
