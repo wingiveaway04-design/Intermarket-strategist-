@@ -16,7 +16,7 @@ export default async function ResearchDetailPage({ params }: { params: { slug: s
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: article } = await supabase.from("analysis_articles")
-    .select("id,slug,title,excerpt,category,published_at,video_url")
+    .select("id,slug,title,excerpt,category,published_at,video_url,is_premium_only")
     .eq("slug", params.slug).eq("content_state", "published").maybeSingle();
   if (!article) notFound();
 
@@ -27,7 +27,7 @@ export default async function ResearchDetailPage({ params }: { params: { slug: s
     hasPremium = Boolean(premium);
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
     if (profile?.role === "admin") hasPremium = true;
-    if (hasPremium) {
+    if (hasPremium || !article.is_premium_only) {
       const { data } = await supabase.from("analysis_article_content")
         .select("body_md,video_path").eq("article_id", article.id).maybeSingle();
       content = data;
@@ -35,7 +35,7 @@ export default async function ResearchDetailPage({ params }: { params: { slug: s
   }
 
   let signedVideo: string | null = null;
-  if (user && hasPremium && content?.video_path) {
+  if (user && (hasPremium || !article.is_premium_only) && content?.video_path) {
     const { data } = await supabase.storage.from("research-videos").createSignedUrl(content.video_path, 3600);
     signedVideo = data?.signedUrl || null;
   }
@@ -51,17 +51,18 @@ export default async function ResearchDetailPage({ params }: { params: { slug: s
         <p className="mt-3 text-xs text-slate-500">{article.published_at ? new Date(article.published_at).toLocaleDateString() : "Research note"}</p>
         {!user ? (
           <section className="mt-8 rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-500/10 to-violet-500/10 p-6">
-            <h2 className="text-xl font-semibold">Premium research access</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">This complete research note is available to Premium subscribers. Sign in to check your access or explore the subscription plans.</p>
+            <h2 className="text-xl font-semibold">{article.is_premium_only?"Premium research access":"Free member research"}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{article.is_premium_only?"This complete research note is reserved for Premium members. Sign in to check your access or explore the subscription plans.":"Create a free account or sign in to read this research note."}</p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link href="/login" className="rounded-lg bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950">Sign in</Link>
-              <Link href="/pricing" className="rounded-lg border border-white/15 px-4 py-3 text-sm">View Premium plans</Link>
+              {!article.is_premium_only&&<Link href="/register" className="rounded-lg border border-white/15 px-4 py-3 text-sm">Create free account</Link>}
+              {article.is_premium_only&&<Link href="/pricing" className="rounded-lg border border-white/15 px-4 py-3 text-sm">View Premium plans</Link>}
             </div>
           </section>
         ) : !hasPremium ? (
           <section className="mt-8 rounded-2xl border border-amber-300/20 bg-amber-400/5 p-6">
             <h2 className="text-xl font-semibold">Upgrade to Premium</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">Your account is active, but it does not currently have Premium access. Subscribe to unlock the complete analysis and member video content.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">This article is part of the Premium research library. Free members can read selected research; Premium members can access the complete library.</p>
             <Link href="/pricing" className="mt-5 inline-flex rounded-lg bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950">Explore Premium plans</Link>
           </section>
         ) : (
