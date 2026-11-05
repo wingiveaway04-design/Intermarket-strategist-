@@ -7,7 +7,7 @@ const metrics = [
   { label: "Journal privacy", value: "Owner-restricted", accent: "from-emerald-400/20 to-teal-500/5", dot: "bg-emerald-300" },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {\n  const supabase = await createClient();\n  const { data: { user } } = await supabase.auth.getUser();\n  const { data: profile } = user ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle() : { data: null };
   return (
     <main className="min-h-screen overflow-hidden bg-[#07111f] text-slate-100">
       <header className="border-b border-white/10 bg-slate-950/35 px-6 py-5 backdrop-blur-xl md:px-12">
