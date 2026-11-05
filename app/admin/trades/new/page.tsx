@@ -21,7 +21,7 @@ export default function AdminNewTradePage(){
     setError("Choose a supported raster image (JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO) up to 50 MB. SVG files are not accepted.");
     setSaving(false);return;
    }
-   const ext=contentTypes[extension]?extension:(mimeExtensions[image.type]||"");
+   const ext=contentTypes[extension]?extension:(mimeExtensions[image.type]||(["jpg","jpeg","png","webp","gif","avif","heic","heif","bmp","tif","tiff","ico"].includes(extension)?extension:""));
    if(!ext){
     setError("This file format is not recognised as a supported image. Please save the TradingView chart as PNG or JPG and try again.");
     setSaving(false);return;
@@ -63,7 +63,7 @@ export default function AdminNewTradePage(){
   <label className="text-sm">Entry price<input name="entry" type="number" step="any" className="field mt-2"/></label><label className="text-sm">Stop loss<input name="stop" type="number" step="any" className="field mt-2"/></label>
   {["tp1","tp2","tp3"].map((x,i)=><label key={x} className="text-sm">Take profit {i+1}<input name={x} type="number" step="any" className="field mt-2"/></label>)}
   <label className="text-sm sm:col-span-2">Trade thesis<textarea name="thesis" rows={3} className="field mt-2"/></label><label className="text-sm sm:col-span-2">Fundamental analysis<textarea name="fundamental" rows={4} className="field mt-2"/></label><label className="text-sm sm:col-span-2">Intermarket analysis<textarea name="intermarket" rows={4} className="field mt-2"/></label>
-  <label className="text-sm sm:col-span-2">Setup screenshot<input name="setup_image" type="file" accept="image/*" className="field mt-2" onChange={e=>setImageName(e.target.files?.[0]?.name||"")}/><span className="mt-1 block text-xs text-slate-500">JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO · Maximum 50 MB · Visible with this public setup when published.</span>{imageName&&<span className="mt-1 block text-xs text-blue-300">Selected: {imageName}</span>}</label>
+  <label className="text-sm sm:col-span-2">Setup screenshot<input name="setup_image" type="file" accept="image/*" className="field mt-2" onChange={e=>setImageName(e.target.files?.[0]?.name||"")}/><span className="mt-1 block text-xs text-slate-500">TradingView JPG/JPEG and other common chart images accepted · Up to 50 MB · Visible with this public setup when published.</span>{imageName&&<span className="mt-1 block text-xs text-blue-300">Selected: {imageName}</span>}</label>
   {error&&<p role="alert" className="text-sm text-rose-300 sm:col-span-2">{error}</p>}<div className="flex gap-3 sm:col-span-2"><button disabled={saving} className="rounded-lg bg-blue-500 px-5 py-3 text-sm font-semibold disabled:opacity-50">{saving?"Saving...":"Save official trade"}</button><Link href="/admin" className="rounded-lg border border-white/15 px-5 py-3 text-sm">Cancel</Link></div>
  </form></div></main>;
 }
