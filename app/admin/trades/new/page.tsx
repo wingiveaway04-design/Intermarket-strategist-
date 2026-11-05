@@ -8,22 +8,19 @@ import { createClient } from "@/lib/supabase/client";
 const markets=["forex","commodities","equities","indices","cryptocurrency","fixed_income","other"];
 
 export default function AdminNewTradePage(){
- const router=useRouter(); const [error,setError]=useState(""); const [saving,setSaving]=useState(false); const [imageName,setImageName]=useState("");
+ const router=useRouter(); const [error,setError]=useState(""); const [saving,setSaving]=useState(false); const [imageNames,setImageNames]=useState<string[]>([]);
  async function save(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");const f=new FormData(e.currentTarget);const supabase=createClient();
   const {data:{user}}=await supabase.auth.getUser();if(!user){setError("Please sign in.");setSaving(false);return;}
-  const image=f.get("setup_image");
-  if(image instanceof File&&image.size>0){
+  const imageFiles=Array.from(f.getAll("setup_images")).filter((value): value is File => value instanceof File && value.size>0);
+  const contentTypes:Record<string,string>={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",avif:"image/avif",heic:"image/heic",heif:"image/heif",bmp:"image/bmp",tif:"image/tiff",tiff:"image/tiff",ico:"image/x-icon"};
+  const mimeExtensions:Record<string,string>={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","image/avif":"avif","image/heic":"heic","image/heif":"heif","image/bmp":"bmp","image/tiff":"tiff","image/x-icon":"ico","image/vnd.microsoft.icon":"ico"};
+  const allowedExtensions=["jpg","jpeg","png","webp","gif","avif","heic","heif","bmp","tif","tiff","ico"];
+  for(const image of imageFiles){
    const extension=image.name.split(".").pop()?.toLowerCase()||"";
-   const contentTypes:Record<string,string>={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",avif:"image/avif",heic:"image/heic",heif:"image/heif",bmp:"image/bmp",tif:"image/tiff",tiff:"image/tiff",ico:"image/x-icon"};
-   const mimeExtensions:Record<string,string>={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","image/avif":"avif","image/heic":"heic","image/heif":"heif","image/bmp":"bmp","image/tiff":"tiff","image/x-icon":"ico","image/vnd.microsoft.icon":"ico"};
-   if(extension==="svg"||image.type==="image/svg+xml"||image.size>50*1024*1024){
-    setError("Choose a supported raster image (JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO) up to 50 MB. SVG files are not accepted.");
-    setSaving(false);return;
-   }
-   const ext=contentTypes[extension]?extension:(mimeExtensions[image.type]||(["jpg","jpeg","png","webp","gif","avif","heic","heif","bmp","tif","tiff","ico"].includes(extension)?extension:""));
-   if(!ext){
-    setError("This file format is not recognised as a supported image. Please save the TradingView chart as PNG or JPG and try again.");
+   const ext=contentTypes[extension]?extension:(mimeExtensions[image.type]||(allowedExtensions.includes(extension)?extension:""));
+   if(extension==="svg"||image.type==="image/svg+xml"||image.size>50*1024*1024||!ext){
+    setError("One or more files are unsupported. Use JPG, PNG, WEBP, GIF, AVIF, HEIC, BMP, TIFF or ICO images, each up to 50 MB. SVG is not accepted.");
     setSaving(false);return;
    }
   }
@@ -40,17 +37,15 @@ export default function AdminNewTradePage(){
   if(err||!trade){setError(err?.message||"Could not save this post. Confirm your account has administrator access.");setSaving(false);return;}
   const targets=[f.get("tp1"),f.get("tp2"),f.get("tp3")].filter(v=>v&&String(v).trim());
   if(targets.length){const {error:te}=await supabase.from("trade_targets").insert(targets.map((p,i)=>({public_trade_id:trade.id,target_number:i+1,price:Number(p)})));if(te){setError("Trade saved, but targets failed: "+te.message);setSaving(false);return;}}
-  if(image instanceof File&&image.size>0){
+  for(const image of imageFiles){
    const extension=image.name.split(".").pop()?.toLowerCase()||"";
-   const contentTypes:Record<string,string>={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",avif:"image/avif",heic:"image/heic",heif:"image/heif",bmp:"image/bmp",tif:"image/tiff",tiff:"image/tiff",ico:"image/x-icon"};
-   const mimeExtensions:Record<string,string>={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","image/avif":"avif","image/heic":"heic","image/heif":"heif","image/bmp":"bmp","image/tiff":"tiff","image/x-icon":"ico","image/vnd.microsoft.icon":"ico"};
-   const ext=contentTypes[extension]?extension:(mimeExtensions[image.type]||"");
-   const contentType=contentTypes[ext];
+   const ext=contentTypes[extension]?extension:(mimeExtensions[image.type]||(allowedExtensions.includes(extension)?extension:""));
+   const contentType=contentTypes[ext]||image.type;
    const path=user.id+"/"+trade.id+"/"+crypto.randomUUID()+"."+ext;
    const {error:up}=await supabase.storage.from("public-trade-images").upload(path,image,{contentType,cacheControl:"3600",upsert:false});
-   if(up){setError("Trade saved, but screenshot upload failed: "+up.message);setSaving(false);return;}
+   if(up){setError("Trade saved, but chart upload failed for "+image.name+": "+up.message);setSaving(false);return;}
    const {error:ie}=await supabase.from("images").insert({owner_id:user.id,public_trade_id:trade.id,storage_path:path,visibility:"public"});
-   if(ie){setError("Trade saved, but screenshot record failed: "+ie.message);setSaving(false);return;}
+   if(ie){setError("Trade saved, but chart record failed for "+image.name+": "+ie.message);setSaving(false);return;}
   }
   router.push("/admin");router.refresh();
  }
@@ -63,7 +58,7 @@ export default function AdminNewTradePage(){
   <label className="text-sm">Entry price<input name="entry" type="number" step="any" className="field mt-2"/></label><label className="text-sm">Stop loss<input name="stop" type="number" step="any" className="field mt-2"/></label>
   {["tp1","tp2","tp3"].map((x,i)=><label key={x} className="text-sm">Take profit {i+1}<input name={x} type="number" step="any" className="field mt-2"/></label>)}
   <label className="text-sm sm:col-span-2">Trade thesis<textarea name="thesis" rows={3} className="field mt-2"/></label><label className="text-sm sm:col-span-2">Fundamental analysis<textarea name="fundamental" rows={4} className="field mt-2"/></label><label className="text-sm sm:col-span-2">Intermarket analysis<textarea name="intermarket" rows={4} className="field mt-2"/></label>
-  <label className="text-sm sm:col-span-2">Setup screenshot<input name="setup_image" type="file" accept="image/*" className="field mt-2" onChange={e=>setImageName(e.target.files?.[0]?.name||"")}/><span className="mt-1 block text-xs text-slate-500">TradingView JPG/JPEG and other common chart images accepted · Up to 50 MB · Visible with this public setup when published.</span>{imageName&&<span className="mt-1 block text-xs text-blue-300">Selected: {imageName}</span>}</label>
+  <label className="text-sm sm:col-span-2">Chart screenshots<input name="setup_images" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,image/bmp,image/tiff,image/x-icon,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.bmp,.tif,.tiff,.ico" className="field mt-2" onChange={e=>setImageNames(Array.from(e.target.files||[]).map(file=>file.name))}/><span className="mt-1 block text-xs text-slate-500">You can select multiple TradingView charts for one trade post. Each image can be up to 50 MB. SVG is not accepted.</span>{imageNames.length>0&&<span className="mt-1 block text-xs text-blue-300">{imageNames.length} chart image(s) selected: {imageNames.join(", ")}</span>}</label>
   {error&&<p role="alert" className="text-sm text-rose-300 sm:col-span-2">{error}</p>}<div className="flex gap-3 sm:col-span-2"><button disabled={saving} className="rounded-lg bg-blue-500 px-5 py-3 text-sm font-semibold disabled:opacity-50">{saving?"Saving...":"Save official trade"}</button><Link href="/admin" className="rounded-lg border border-white/15 px-5 py-3 text-sm">Cancel</Link></div>
  </form></div></main>;
 }
