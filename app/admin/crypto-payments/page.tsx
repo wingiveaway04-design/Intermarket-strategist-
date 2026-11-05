@@ -11,9 +11,6 @@ export default async function AdminCryptoPaymentsPage({ searchParams }: { search
   const { data: payments, error } = await supabase.from("crypto_payment_requests")
     .select("id,user_id,plan,amount_usdt,wallet_address,network,tx_hash,status,created_at,admin_note")
     .order("created_at", { ascending: false }).limit(100);
-  const ids = [...new Set((payments || []).map((p) => p.user_id))];
-  const { data: members } = ids.length ? await supabase.rpc("admin_search_users", { search_term: "" }) : { data: [] as any[] };
-  const emailById = new Map((members || []).map((m: any) => [m.user_id, m.email]));
   return <main className="min-h-screen px-5 py-10 md:px-12"><div className="mx-auto max-w-6xl">
     <Link href="/admin" className="text-sm text-cyan-300">← Administrator workspace</Link>
     <header className="mt-5"><p className="text-xs font-semibold uppercase tracking-[.2em] text-violet-300">Manual crypto settlement</p><h1 className="mt-2 text-3xl font-bold">USDT TRC20 payment reviews</h1><p className="mt-2 text-sm text-slate-400">Verify every transaction independently on a TRON explorer before approving. Approval activates the selected Premium period.</p></header>
