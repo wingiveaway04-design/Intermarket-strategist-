@@ -1,4 +1,7 @@
-import Link from "next/link";\nimport { createClient } from "@/lib/supabase/server";\n\nconst metrics = [
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+
+const metrics = [
   { label: "Research focus", value: "Macro + Intermarket", accent: "from-cyan-400/20 to-blue-500/5", dot: "bg-cyan-300" },
   { label: "Official publishing", value: "Administrator only", accent: "from-violet-400/20 to-fuchsia-500/5", dot: "bg-violet-300" },
   { label: "Journal privacy", value: "Owner-restricted", accent: "from-emerald-400/20 to-teal-500/5", dot: "bg-emerald-300" },
