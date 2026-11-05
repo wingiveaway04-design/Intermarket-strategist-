@@ -38,7 +38,7 @@ export default function AdminNewResearchPage() {
     }
     const published=form.get("content_state")==="published";
     const {data:article,error:insertError}=await supabase.from("analysis_articles").insert({
-      slug,title,excerpt,category,video_url:youtube||null,author_id:user.id,
+      slug,title,excerpt,category,video_url:youtube||null,author_id:user.id,is_premium_only:true,
       content_state:published?"published":"draft",published_at:published?new Date().toISOString():null
     }).select("id").single();
     if(insertError||!article){
