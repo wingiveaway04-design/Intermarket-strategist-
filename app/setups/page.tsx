@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import TradeImageGallery from "@/components/trade-image-gallery";
 
 export default async function SetupsPage() {
   const supabase = await createClient();
@@ -93,14 +94,13 @@ export default async function SetupsPage() {
                 {trade.fundamental_analysis && <section className="mt-5 border-t border-white/10 pt-5"><h3 className="text-sm font-semibold text-blue-200">Fundamental analysis</h3><p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-300">{trade.fundamental_analysis}</p></section>}
                 {trade.intermarket_analysis && <section className="mt-5 border-t border-white/10 pt-5"><h3 className="text-sm font-semibold text-blue-200">Intermarket analysis</h3><p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-300">{trade.intermarket_analysis}</p></section>}
 
-                {tradeImages.map((image) => {
-                  const url = supabase.storage.from("public-trade-images").getPublicUrl(image.storage_path).data.publicUrl;
-                  const ext = image.storage_path.split(".").pop()?.toLowerCase() ?? "";
-                  const browserPreview = ["jpg", "jpeg", "png", "webp", "gif", "avif", "bmp", "ico"].includes(ext);
-                  return browserPreview
-                    ? <img key={image.storage_path} src={url} alt={trade.instrument + " trade setup chart"} className="mt-6 h-auto max-h-[760px] w-full rounded-xl border border-white/10 object-contain" />
-                    : <a key={image.storage_path} href={url} target="_blank" rel="noreferrer" className="mt-6 inline-flex text-sm text-blue-300 underline">Open or download attached setup image ({ext.toUpperCase()})</a>;
-                })}
+                <TradeImageGallery
+                  instrument={trade.instrument}
+                  images={tradeImages.map((image) => ({
+                    url: supabase.storage.from("public-trade-images").getPublicUrl(image.storage_path).data.publicUrl,
+                    alt: trade.instrument + " trade setup chart",
+                  }))}
+                />
                 <p className="mt-6 text-xs text-slate-500">Published {trade.published_at ? new Date(trade.published_at).toLocaleDateString() : ""}</p>
               </article>
             );
