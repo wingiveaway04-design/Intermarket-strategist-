@@ -31,7 +31,7 @@ export default async function SetupsPage() {
     <main className="min-h-screen bg-[#080e19] px-5 py-10 text-slate-100 md:px-12">
       <div className="mx-auto max-w-5xl">
         <Link href="/" className="text-xs tracking-[.18em] text-blue-300">INTERMARKET STRATEGIST</Link>
-        <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
+        <header className="flex flex-wrap items-center justify-between gap-4"><nav className="flex flex-wrap gap-3 text-sm"><Link href="/analysis" className="text-slate-300 hover:text-cyan-200">Research library</Link>{user ? <Link href="/dashboard" className="text-slate-300 hover:text-cyan-200">Dashboard</Link> : <Link href="/login" className="text-slate-300 hover:text-cyan-200">Sign in</Link>}{isAdmin && <Link href="/admin" className="text-violet-300">Admin workspace</Link>}</nav></header>\n        <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[.2em] text-blue-300">Administrator-published research</p>
             <h1 className="mt-3 text-4xl font-semibold">Public trade ideas</h1>
