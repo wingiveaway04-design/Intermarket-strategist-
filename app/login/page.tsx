@@ -25,7 +25,9 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
-      window.location.assign("/dashboard");
+      const requestedNext = new URLSearchParams(window.location.search).get("next");
+      const destination = requestedNext && requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "/dashboard";
+      window.location.assign(destination);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to sign in.");
     } finally {
