@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Member = { user_id:string; email:string; display_name:string|null };
 type Gift = { gift_id:string; user_id:string; email:string; display_name:string|null; starts_at:string; expires_at:string; reason:string|null; revoked_at:string|null; granted_by_email:string|null };
 
 export default function AdminGiftsPage(){
- const supabase=createClient();
+ const supabase=useMemo(()=>createClient(),[]);
  const [term,setTerm]=useState("");
  const [members,setMembers]=useState<Member[]>([]);
  const [selected,setSelected]=useState<Member|null>(null);
