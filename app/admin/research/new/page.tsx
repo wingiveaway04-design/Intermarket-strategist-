@@ -25,6 +25,7 @@ export default function AdminNewResearchPage() {
     const body=String(form.get("body_md")||"").trim();
     const category=String(form.get("category")||"cross_market");
     const youtube=String(form.get("video_url")||"").trim();
+    const premiumOnly=form.get("access_level")!=="free";
     const file=form.get("video_file");
     if(youtube){try{const u=new URL(youtube);if(!["youtube.com","www.youtube.com","youtu.be","m.youtube.com"].includes(u.hostname))throw new Error();}catch{setError("Enter a valid YouTube video URL.");setBusy(false);return;}}
     if(file instanceof File&&file.size>0&&(!file.type.startsWith("video/")||file.size>MAX_VIDEO)){setError("Choose a video file up to 500 MB.");setBusy(false);return;}
@@ -38,7 +39,7 @@ export default function AdminNewResearchPage() {
     }
     const published=form.get("content_state")==="published";
     const {data:article,error:insertError}=await supabase.from("analysis_articles").insert({
-      slug,title,excerpt,category,video_url:youtube||null,author_id:user.id,is_premium_only:true,
+      slug,title,excerpt,category,video_url:youtube||null,author_id:user.id,is_premium_only:premiumOnly,
       content_state:published?"published":"draft",published_at:published?new Date().toISOString():null
     }).select("id").single();
     if(insertError||!article){
@@ -53,13 +54,14 @@ export default function AdminNewResearchPage() {
     }
     router.push("/admin");router.refresh();
   }
-  return <main className="min-h-screen px-5 py-10 md:px-12"><div className="mx-auto max-w-4xl"><Link href="/admin" className="text-sm text-cyan-300">← Admin workspace</Link><h1 className="mt-5 text-3xl font-bold">Publish research</h1><p className="mt-2 text-sm text-slate-400">Create a Premium research article. Full analysis and uploaded video files are stored separately from the public preview.</p>
+  return <main className="min-h-screen px-5 py-10 md:px-12"><div className="mx-auto max-w-4xl"><Link href="/admin" className="text-sm text-cyan-300">← Admin workspace</Link><h1 className="mt-5 text-3xl font-bold">Publish research</h1><p className="mt-2 text-sm text-slate-400">Create a research article and choose whether it is available to all registered members or reserved for Premium members. Full content remains protected from public visitors.</p>
   <form onSubmit={save} className="mt-7 grid gap-4 rounded-2xl border border-white/10 bg-slate-900/70 p-5 md:grid-cols-2">
     <label className="text-sm md:col-span-2">Research title<input name="title" required maxLength={180} className="field mt-2" placeholder="e.g. Oil, real yields, and the gold outlook"/></label>
     <label className="text-sm">Category<select name="category" className="field mt-2">{topics.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
-    <label className="text-sm">Publication status<select name="content_state" className="field mt-2"><option value="draft">Save as draft</option><option value="published">Publish for Premium members</option></select></label>
+    <label className="text-sm">Access level<select name="access_level" className="field mt-2"><option value="premium">Premium members only</option><option value="free">Free registered members</option></select></label>
+    <label className="text-sm">Publication status<select name="content_state" className="field mt-2"><option value="draft">Save as draft</option><option value="published">Publish research</option></select></label>
     <label className="text-sm md:col-span-2">Preview / excerpt<textarea name="excerpt" rows={3} maxLength={500} required className="field mt-2" placeholder="Short summary visible to visitors."/></label>
-    <label className="text-sm md:col-span-2">Full research<textarea name="body_md" rows={12} required className="field mt-2" placeholder="Write the complete analysis here. Only entitled Premium users and administrators can retrieve it."/></label>
+    <label className="text-sm md:col-span-2">Full research<textarea name="body_md" rows={12} required className="field mt-2" placeholder="Write the complete analysis here. Only members entitled to this article and administrators can retrieve it."/></label>
     <label className="text-sm md:col-span-2">YouTube video URL (optional)<input name="video_url" type="url" className="field mt-2" placeholder="https://www.youtube.com/watch?v=..."/></label>
     <label className="text-sm md:col-span-2">Upload video file (optional)<input name="video_file" type="file" accept="video/mp4,video/webm,video/quicktime,video/x-matroska" className="field mt-2" onChange={e=>setVideoName(e.target.files?.[0]?.name||"")}/><span className="mt-2 block text-xs leading-5 text-slate-500">MP4, WebM, MOV or MKV · maximum 500 MB. Uploaded files remain private and are served through temporary signed links.</span>{videoName&&<span className="mt-1 block text-xs text-cyan-300">Selected: {videoName}</span>}</label>
     {error&&<p role="alert" className="text-sm text-rose-300 md:col-span-2">{error}</p>}
