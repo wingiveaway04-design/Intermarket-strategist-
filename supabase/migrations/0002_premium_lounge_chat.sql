@@ -70,6 +70,8 @@ begin
 end;
 $$;
 
+revoke all on function public.notify_premium_chat_activity() from public, anon, authenticated;
+
 drop trigger if exists premium_chat_activity_notification on public.premium_chat_messages;
 create trigger premium_chat_activity_notification
 after insert on public.premium_chat_messages
