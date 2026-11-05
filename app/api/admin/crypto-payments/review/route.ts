@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -16,8 +15,7 @@ export async function POST(request: Request) {
   if (!/^[0-9a-f-]{36}$/i.test(requestId) || !["approve", "reject"].includes(decision)) {
     return NextResponse.redirect(new URL("/admin/crypto-payments?result=invalid", request.url), 303);
   }
-  const admin = createAdminClient();
-  const { data, error } = await admin.rpc("admin_review_crypto_payment", {
+  const { data, error } = await supabase.rpc("admin_review_crypto_payment", {
     p_request_id: requestId, p_approve: decision === "approve", p_admin_note: note
   });
   const result = error ? "failed" : data ? "updated" : "already-reviewed";
