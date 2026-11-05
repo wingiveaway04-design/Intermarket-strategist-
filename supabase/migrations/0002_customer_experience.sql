@@ -12,7 +12,7 @@ alter table public.notifications enable row level security;
 create policy "Users read own notifications" on public.notifications for select to authenticated using(user_id=(select auth.uid()));
 create policy "Users update own notifications" on public.notifications for update to authenticated using(user_id=(select auth.uid())) with check(user_id=(select auth.uid()));
 revoke insert,delete on public.notifications from anon,authenticated;
-grant select,update on public.notifications to authenticated;
+revoke update on public.notifications from authenticated;\ngrant select on public.notifications to authenticated;\ngrant update(read_at) on public.notifications to authenticated;
 
 create schema if not exists private;
 create or replace function private.user_has_premium(target_user uuid) returns boolean language sql stable security definer set search_path=''
@@ -30,7 +30,7 @@ begin
  insert into public.notifications(user_id,title,body,href,audience) select p.id,v_title,v_body,v_href,v_audience from public.profiles p where p.id<>new.author_id and (v_audience='all' or private.user_has_premium(p.id));end if;return new;
 end;$$;
 create trigger notify_public_trade_published after insert or update of content_state on public.public_trades for each row execute function public.notify_published_content();
-create trigger notify_analysis_published after insert or update of content_state on public.analysis_articles for each row execute function public.notify_published_content();
+create trigger notify_analysis_published after insert or update of content_state on public.analysis_articles for each row execute function public.notify_published_content();\nrevoke all on function public.notify_published_content() from public,anon,authenticated;
 
 create table if not exists public.premium_chat_messages (
  id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,
@@ -55,4 +55,4 @@ create policy "Users update own profile avatars" on storage.objects for update t
 create policy "Premium lounge members read media" on storage.objects for select to authenticated using(bucket_id='premium-lounge' and (public.is_admin() or private.user_has_premium((select auth.uid()))));
 create policy "Premium lounge members upload media" on storage.objects for insert to authenticated with check(bucket_id='premium-lounge' and (storage.foldername(name))[1]=(select auth.uid())::text and (public.is_admin() or private.user_has_premium((select auth.uid()))));
 create policy "Premium lounge owners delete media" on storage.objects for delete to authenticated using(bucket_id='premium-lounge' and ((storage.foldername(name))[1]=(select auth.uid())::text or public.is_admin()));
-alter publication supabase_realtime add table public.premium_chat_messages;
+do $ begin alter publication supabase_realtime add table public.premium_chat_messages; exception when duplicate_object then null; end $;\ndo $ begin alter publication supabase_realtime add table public.notifications; exception when duplicate_object then null; end $;
