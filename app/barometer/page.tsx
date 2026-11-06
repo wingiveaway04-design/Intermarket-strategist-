@@ -105,10 +105,11 @@ export default async function NewsTradingBarometerPage({ searchParams = {} }: { 
   const byEvent = groupRows(rows, (row) => row.news_event_type || "Unclassified");
   const byInstrument = groupRows(rows, (row) => row.instrument);
   const byDirection = groupRows(rows, (row) => row.direction.toUpperCase());
+  const byRelease = groupRows(rows, (row) => row.news_event_name || row.news_event_type || "Unclassified");
   const monthly = groupRows(rows, (row) => {
     const date = new Date(row.closed_at || row.created_at);
     return date.toLocaleString("en", { month: "short", year: "numeric" });
-  });
+  }).sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime());
 
   return <main className="min-h-screen px-4 py-8 text-slate-100 md:px-10 md:py-10">
     <div className="mx-auto max-w-6xl">
@@ -129,7 +130,7 @@ export default async function NewsTradingBarometerPage({ searchParams = {} }: { 
 
       <section className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="News-trade win rate" value={stats.winRate === null ? "—" : stats.winRate.toFixed(1) + "%"} note={`${stats.wins} wins · ${stats.losses} losses · ${stats.breakeven} breakeven`}/>
-        <Metric label="Profit factor" value={stats.profitFactor === null ? "—" : stats.profitFactor.toFixed(2)} note="Gross winning R ÷ gross losing R"/>
+        <Metric label="Profit factor" value={stats.grossProfit > 0 && stats.grossLoss === 0 ? "∞" : stats.profitFactor === null ? "—" : stats.profitFactor.toFixed(2)} note="Gross winning R ÷ gross losing R"/>
         <Metric label="Net performance" value={(stats.netR > 0 ? "+" : "") + stats.netR.toFixed(2) + "R"} note={`${stats.total} completed news trades`}/>
         <Metric label="Average result" value={stats.averageR === null ? "—" : (stats.averageR > 0 ? "+" : "") + stats.averageR.toFixed(2) + "R"} note="Average realized R per completed trade"/>
       </section>
@@ -145,7 +146,7 @@ export default async function NewsTradingBarometerPage({ searchParams = {} }: { 
       </section>}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <PerformanceTable title="Performance by economic event" rows={byEvent}/>
+        <PerformanceTable title="Performance by event category" rows={byEvent}/><PerformanceTable title="Performance by specific release" rows={byRelease}/>
         <PerformanceTable title="Performance by instrument" rows={byInstrument}/>
         <PerformanceTable title="Long versus Short" rows={byDirection}/>
         <PerformanceTable title="Monthly performance" rows={monthly}/>
