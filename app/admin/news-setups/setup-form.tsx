@@ -13,13 +13,13 @@ type Setup = {
   macro_view:string|null; scenario_hot:string|null; scenario_cool:string|null; trade_bias:string;
   confirmation:string|null; entry_plan:string|null; invalidation:string|null; stop_loss:string|null;
   targets:string|null; risk_note:string|null; post_event_review:string|null;
-  publication_status:string; access_level:"free"|"premium"; cover_image_path:string|null;
+  publication_status:string; access_level:"free"|"premium"; cover_image_path:string|null; image_paths?:string[];
 };
 export default function NewsSetupForm({initial}:{initial?:Setup}) {
   const router=useRouter();
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
-  const [imageName,setImageName]=useState("");
+  const [imageNames,setImageNames]=useState<string[]>([]);
   async function save(e:React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setSaving(true); setError("");
     const form=new FormData(e.currentTarget); const supabase=createClient();
@@ -28,17 +28,23 @@ export default function NewsSetupForm({initial}:{initial?:Setup}) {
     const {data:profile}=await supabase.from("profiles").select("role").eq("id",user.id).maybeSingle();
     if(profile?.role!=="admin"){setError("Administrator access is required.");setSaving(false);return;}
     const rawDate=String(form.get("release_at")||"");
-    const file=form.get("cover_image");
-    if(file instanceof File&&file.size>0&&(!["image/jpeg","image/png","image/webp","image/avif"].includes(file.type)||file.size>10*1024*1024)){
-      setError("Choose a JPG, PNG, WebP or AVIF image up to 10 MB.");setSaving(false);return;
+    const files=form.getAll("gallery_images").filter((x):x is File=>x instanceof File&&x.size>0);
+    if(files.some(file=>!["image/jpeg","image/png","image/webp","image/avif"].includes(file.type)||file.size>10*1024*1024)){
+      setError("Each image must be JPG, PNG, WebP or AVIF and no larger than 10 MB.");setSaving(false);return;
     }
-    let imagePath=initial?.cover_image_path||null;
-    if(file instanceof File&&file.size>0){
+    const uploadedPaths:string[]=[];
+    for(const file of files){
       const ext=file.name.split(".").pop()?.toLowerCase()||"jpg";
-      imagePath=user.id+"/"+crypto.randomUUID()+"."+ext;
-      const {error:uploadError}=await supabase.storage.from("news-macro-media").upload(imagePath,file,{contentType:file.type,cacheControl:"3600",upsert:false});
-      if(uploadError){setError("Cover image upload failed: "+uploadError.message);setSaving(false);return;}
+      const path=user.id+"/"+crypto.randomUUID()+"."+ext;
+      const {error:uploadError}=await supabase.storage.from("news-macro-media").upload(path,file,{contentType:file.type,cacheControl:"3600",upsert:false});
+      if(uploadError){
+        if(uploadedPaths.length)await supabase.storage.from("news-macro-media").remove(uploadedPaths);
+        setError("Image upload failed: "+uploadError.message);setSaving(false);return;
+      }
+      uploadedPaths.push(path);
     }
+    const imagePaths=files.length?uploadedPaths:(initial?.image_paths||[]);
+    const imagePath=files.length?(uploadedPaths[0]||null):(initial?.cover_image_path||null);
     const published=form.get("publication_status")==="published";
     const payload={
       title:String(form.get("title")||"").trim(),event_type:form.get("event_type"),
@@ -49,7 +55,7 @@ export default function NewsSetupForm({initial}:{initial?:Setup}) {
       confirmation:form.get("confirmation"),entry_plan:form.get("entry_plan"),invalidation:form.get("invalidation"),
       stop_loss:form.get("stop_loss"),targets:form.get("targets"),risk_note:form.get("risk_note"),
       post_event_review:form.get("post_event_review"),publication_status:published?"published":"draft",
-      access_level:form.get("access_level")==="free"?"free":"premium",cover_image_path:imagePath,
+      access_level:form.get("access_level")==="free"?"free":"premium",cover_image_path:imagePath,image_paths:imagePaths,
       author_id:user.id,published_at:published?(initial?.published_at||new Date().toISOString()):null
     };
     if(!payload.title||!payload.event_name){setError("Add a publication title and event name.");setSaving(false);return;}
@@ -57,10 +63,10 @@ export default function NewsSetupForm({initial}:{initial?:Setup}) {
       ? await supabase.from("news_setups").update(payload).eq("id",initial.id).select("id").single()
       : await supabase.from("news_setups").insert(payload).select("id").single();
     if(result.error||!result.data){
-      if(imagePath&&imagePath!==initial?.cover_image_path)await supabase.storage.from("news-macro-media").remove([imagePath]);
+      if(uploadedPaths.length)await supabase.storage.from("news-macro-media").remove(uploadedPaths);
       setError(result.error?.message||"Could not save the publication.");setSaving(false);return;
     }
-    if(initial?.cover_image_path&&imagePath!==initial.cover_image_path)await supabase.storage.from("news-macro-media").remove([initial.cover_image_path]);
+    if(files.length){const old=[initial?.cover_image_path,...(initial?.image_paths||[])].filter((x):x is string=>Boolean(x));if(old.length)await supabase.storage.from("news-macro-media").remove([...new Set(old)]);}
     router.push("/admin");router.refresh();
   }
   const v=(key:keyof Setup)=>initial?.[key]??"";
@@ -91,7 +97,7 @@ export default function NewsSetupForm({initial}:{initial?:Setup}) {
       <label className="text-sm md:col-span-2">Risk note<textarea name="risk_note" rows={2} defaultValue={String(v("risk_note"))} className={field}/></label>
       <label className="text-sm md:col-span-2">Post-event review<textarea name="post_event_review" rows={3} defaultValue={String(v("post_event_review"))} className={field}/></label>
       <section className="rounded-xl border border-white/10 bg-black/15 p-4 md:col-span-2"><p className="text-sm font-semibold">Publication access</p><p className="mt-1 text-xs leading-5 text-slate-400">Free members can read Free publications. Premium members can read both Free and Premium publications. Visitors cannot read the full publication.</p><select name="access_level" defaultValue={initial?.access_level||"premium"} className={field}><option value="premium">Premium members only</option><option value="free">All registered members (Free + Premium)</option></select></section>
-      <label className="text-sm md:col-span-2">Cover image<input name="cover_image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" className={field} onChange={e=>setImageName(e.target.files?.[0]?.name||"")}/><span className="mt-2 block text-xs leading-5 text-slate-500">Upload a relevant macro/market editorial image: central-bank or Treasury imagery, economic-data visuals, yield-curve screens, currency markets, gold, oil or equity-index trading. JPG, PNG, WebP or AVIF · maximum 10 MB. The image is stored privately and shown only to entitled members.</span>{imageName&&<span className="mt-1 block text-xs text-cyan-300">Selected: {imageName}</span>}{initial?.cover_image_path&&<span className="mt-1 block text-xs text-slate-500">An existing cover image is saved. Upload a replacement only if you want to change it.</span>}</label>
+      <label className="text-sm md:col-span-2">Publication image gallery<input name="gallery_images" type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif" className={field} onChange={e=>setImageNames(Array.from(e.target.files||[]).map(file=>file.name))}/><span className="mt-2 block text-xs leading-5 text-slate-500">Select multiple relevant editorial images at once: central-bank or Treasury imagery, economic-data visuals, yield curves, currency markets, gold, oil or equity-index trading. JPG, PNG, WebP or AVIF · maximum 10 MB per image. New selections replace the existing gallery.</span>{imageNames.length>0&&<span className="mt-1 block text-xs text-cyan-300">Selected: {imageNames.join(", ")}</span>}{(initial?.image_paths?.length||initial?.cover_image_path)&&<span className="mt-1 block text-xs text-slate-500">Existing gallery: {(initial?.image_paths||[initial?.cover_image_path].filter(Boolean)).length} image(s). Leave empty to keep it.</span>}</label>
       <label className="text-sm md:col-span-2">Publication status<select name="publication_status" defaultValue={String(v("publication_status")||"draft")} className={field}><option value="draft">Save as draft</option><option value="published">Publish now</option></select></label>
       {error&&<p role="alert" className="text-sm text-rose-300 md:col-span-2">{error}</p>}
       <div className="flex flex-wrap gap-3 md:col-span-2"><button disabled={saving} className="rounded-lg bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">{saving?"Saving…":initial?"Save changes":"Save News Setup"}</button><Link href="/admin" className="rounded-lg border border-white/15 px-5 py-3 text-sm">Cancel</Link></div>
