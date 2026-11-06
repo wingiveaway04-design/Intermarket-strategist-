@@ -36,7 +36,7 @@ export default async function JournalTradeDetail({ params }: { params: { id: str
             <h1 className="text-3xl font-semibold">{trade.instrument}</h1>
             <p className="mt-2 text-sm uppercase tracking-wider text-slate-500">{trade.market.replaceAll("_", " ")} · {trade.direction}</p>
           </div>
-          <span className="rounded-full bg-white/5 px-4 py-2 text-sm">{trade.status.replaceAll("_", " ")}</span>
+          <div className="flex items-center gap-2"><span className="rounded-full bg-white/5 px-4 py-2 text-sm">{trade.status.replaceAll("_", " ")}</span><Link href={"/journal/" + trade.id + "/edit"} className="rounded-lg border border-cyan-300/25 px-4 py-2 text-sm font-semibold text-cyan-200">Edit trade</Link></div>
         </div>
 
         <section className="mt-5 rounded-xl border border-cyan-300/15 bg-cyan-300/[.04] p-5"><h2 className="font-semibold text-cyan-200">News-trade classification</h2><p className="mt-3 text-sm text-slate-300">{trade.news_trade_attribution==="direct_news"?"Direct news trade — included in your Barometer":trade.news_trade_attribution==="event_context"?"News-event context only — excluded from your Barometer":"Not classified as a news trade"}</p>{trade.news_event_type&&<p className="mt-2 text-sm text-slate-400">{trade.news_event_type}{trade.news_event_name?" · "+trade.news_event_name:""}</p>}{trade.news_event_at&&<p className="mt-1 text-xs text-slate-500">Release: {new Date(trade.news_event_at).toLocaleString()}</p>}{trade.realized_r!==null&&<p className="mt-3 text-sm font-semibold">Realized result: {Number(trade.realized_r)>0?"+":""}{Number(trade.realized_r).toFixed(2)}R</p>}</section>
