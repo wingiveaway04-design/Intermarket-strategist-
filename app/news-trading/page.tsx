@@ -12,8 +12,10 @@ export default async function NewsTradingPage(){
   supabase.rpc("has_premium_access",{check_user_id:user.id})
  ]);
  const entitled=Boolean(premium)||profile?.role==="admin";
- if(!entitled)return <main className="min-h-screen px-5 py-12 md:px-12"><div className="mx-auto max-w-3xl"><Link href="/dashboard" className="text-sm text-cyan-300">← Dashboard</Link><section className="mt-10 rounded-3xl border border-amber-300/20 bg-gradient-to-br from-amber-300/10 via-slate-900 to-cyan-400/5 p-8 md:p-12"><p className="text-xs font-semibold uppercase tracking-[.2em] text-amber-200">Premium member library</p><h1 className="mt-4 text-3xl font-bold">News & Macro Intelligence</h1><p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">This library contains the analyst's exclusive NFP, CPI, FOMC and other event outlooks, intermarket scenarios, live updates and post-event reviews. Premium members can access all Premium and Free publications.</p><Link href="/pricing" className="mt-7 inline-flex rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950">Explore Premium access</Link></section></div></main>;
- const {data:items,error}=await supabase.from("news_setups").select("*").eq("publication_status","published").order("published_at",{ascending:false}).limit(100);
+ const [{data:items,error},{data:articles}] = await Promise.all([
+  supabase.from("news_setups").select("*").eq("publication_status","published").order("published_at",{ascending:false}).limit(100),
+  supabase.from("analysis_articles").select("id,slug,title,excerpt,category,published_at,is_premium_only").eq("content_state","published").order("published_at",{ascending:false}).limit(50)
+ ]);
  const cards=await Promise.all((items??[]).map(async item=>{
   let cover:string|null=null;
   if(item.cover_image_path){const {data}=await supabase.storage.from("news-macro-media").createSignedUrl(item.cover_image_path,3600);cover=data?.signedUrl||null;}
@@ -22,6 +24,7 @@ export default async function NewsTradingPage(){
  return <main className="min-h-screen px-5 py-10 text-slate-100 md:px-12"><div className="mx-auto max-w-5xl">
   <Link href="/dashboard" className="text-xs tracking-wider text-cyan-300">← MEMBER DASHBOARD</Link>
   <div className="mt-8 overflow-hidden rounded-3xl border border-cyan-300/15 bg-gradient-to-br from-[#14253a] via-[#0d1728] to-[#14253a] p-7 md:p-10"><p className="text-xs font-semibold uppercase tracking-[.2em] text-cyan-300">Premium research desk</p><h1 className="mt-3 text-3xl font-bold md:text-4xl">News & Macro Intelligence</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Exclusive pre-event outlooks, live event updates and post-event reviews. Each publication separates the macro thesis from the market confirmation required to execute.</p><div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-300"><span className="rounded-full border border-white/10 px-3 py-1.5">NFP · CPI · PCE</span><span className="rounded-full border border-white/10 px-3 py-1.5">FOMC · Central banks</span><span className="rounded-full border border-white/10 px-3 py-1.5">Gold · FX · Indices · Rates</span></div></div>
+  {!entitled&&<section className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-300/[.06] p-5"><p className="text-sm font-semibold text-amber-100">Free member access</p><p className="mt-1 text-sm leading-6 text-slate-300">You can read publications marked Free. Premium-only outlooks and full research remain locked. Upgrade to unlock the complete News & Macro desk.</p><Link href="/pricing" className="mt-3 inline-flex rounded-lg bg-cyan-400 px-4 py-2 text-xs font-bold text-slate-950">Explore Premium</Link></section>}
   {error&&<p role="alert" className="mt-8 rounded-xl border border-rose-400/30 p-4 text-sm text-rose-200">{error.message}</p>}
   {!cards.length&&!error&&<div className="mt-8 rounded-2xl border border-white/10 bg-[#101a2a] p-8 text-center text-sm text-slate-400">No News & Macro publications have been published yet.</div>}
   <div className="mt-8 grid gap-5">{cards.map(item=><article key={item.id} className="overflow-hidden rounded-2xl border border-white/10 bg-[#101a2a]">
