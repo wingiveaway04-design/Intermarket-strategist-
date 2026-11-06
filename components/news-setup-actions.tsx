@@ -13,12 +13,13 @@ export default function NewsSetupActions({id,title}:{id:string;title:string}){
  async function remove(){
   setBusy(true);setError("");
   const supabase=createClient();
-  const {data:item,error:readError}=await supabase.from("news_setups").select("cover_image_path").eq("id",id).maybeSingle();
+  const {data:item,error:readError}=await supabase.from("news_setups").select("cover_image_path,image_paths").eq("id",id).maybeSingle();
   if(readError){setError(readError.message);setBusy(false);return;}
   const {error:deleteError}=await supabase.from("news_setups").delete().eq("id",id);
   if(deleteError){setError(deleteError.message);setBusy(false);return;}
-  if(item?.cover_image_path){
-   const {error:mediaError}=await supabase.storage.from("news-macro-media").remove([item.cover_image_path]);
+  const mediaPaths=[...new Set([...(item?.image_paths||[]),...(item?.cover_image_path?[item.cover_image_path]:[])])];
+  if(mediaPaths.length){
+   const {error:mediaError}=await supabase.storage.from("news-macro-media").remove(mediaPaths);
    if(mediaError){setError("Publication deleted, but its cover image could not be removed: "+mediaError.message);setBusy(false);router.refresh();return;}
   }
   setOpen(false);setBusy(false);router.refresh();
