@@ -8,8 +8,8 @@ export default function NewsImageGallery({images,title}:{images:string[];title:s
  const move=(step:number)=>setActive(current=>current===null?null:(current+step+images.length)%images.length);
  return <>
   <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 md:grid-cols-4">
-   {images.map((src,i)=><button key={src} type="button" onClick={()=>setActive(i)} className="group relative overflow-hidden rounded-xl border border-white/10 bg-black/20 text-left" aria-label={`View image ${i+1} of ${images.length}`}>
-    <img src={src} alt={title+` — image ${i+1}`} className="h-36 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-44"/>
+   {images.map((src,i)=><button key={src} type="button" onClick={()=>setActive(i)} className="group relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-white/10 bg-black/30 text-left" aria-label={`View image ${i+1} of ${images.length}`}>
+    <img src={src} alt={title+` — image ${i+1}`} className="h-full w-full object-contain transition duration-300"/>
     <span className="absolute bottom-2 right-2 rounded-md bg-black/65 px-2 py-1 text-[10px] text-white">View full image</span>
    </button>)}
   </div>
