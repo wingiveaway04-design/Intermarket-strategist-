@@ -1,13 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { ReactNode, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Props = { tradeId: string; instrument: string; imagePaths: string[] };
+type Props = {
+  tradeId: string;
+  instrument: string;
+  imagePaths: string[];
+  admin: boolean;
+  children: ReactNode;
+};
 
-export default function PublicTradeActions({ tradeId, instrument, imagePaths }: Props) {
+export default function PublicTradeActions({ tradeId, instrument, imagePaths, admin, children }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -16,26 +22,31 @@ export default function PublicTradeActions({ tradeId, instrument, imagePaths }: 
   const longPressed = useRef(false);
 
   function startPress() {
+    if (!admin) return;
     longPressed.current = false;
     timer.current = setTimeout(() => {
       longPressed.current = true;
       setOpen(true);
     }, 550);
   }
+
   function cancelPress() {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
   }
+
   function handleContextMenu(event: React.MouseEvent) {
+    if (!admin) return;
     event.preventDefault();
     setOpen(true);
   }
 
   async function removeTrade() {
-    if (!window.confirm(`Delete the public trade idea for ${instrument}? This permanently removes the publication and its linked chart records.`)) return;
+    if (!window.confirm(`Delete the public trade idea for ${instrument}? This permanently removes the publication and its linked chart files.`)) return;
     setBusy(true);
     setMessage("");
     const supabase = createClient();
+
     if (imagePaths.length) {
       const { error: storageError } = await supabase.storage.from("public-trade-images").remove(imagePaths);
       if (storageError) {
@@ -44,33 +55,78 @@ export default function PublicTradeActions({ tradeId, instrument, imagePaths }: 
         return;
       }
     }
+
     const { error } = await supabase.from("public_trades").delete().eq("id", tradeId);
     if (error) {
       setMessage("Could not delete this trade idea: " + error.message);
       setBusy(false);
       return;
     }
+
     setOpen(false);
     router.refresh();
   }
 
   return (
-    <div className="relative flex items-center gap-2" onTouchStart={startPress} onTouchEnd={cancelPress} onTouchMove={cancelPress} onContextMenu={handleContextMenu}>
-      <span className="hidden text-[10px] text-slate-600 md:inline">Right-click / long-press for actions</span>
-      <button type="button" aria-label={`Actions for ${instrument}`} onClick={() => { if (!longPressed.current) setOpen((value) => !value); }} className="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-blue-300/40 hover:bg-white/5">
-        •••
-      </button>
-      {open && (
-        <div role="menu" className="absolute right-0 top-full z-30 mt-2 min-w-44 rounded-xl border border-white/15 bg-[#111d30] p-1.5 shadow-2xl shadow-black/50">
-          <Link role="menuitem" href={`/admin/trades/${tradeId}/edit`} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm text-slate-200 hover:bg-blue-400/10 hover:text-blue-200">
-            Edit trade idea
-          </Link>
-          <button role="menuitem" type="button" disabled={busy} onClick={removeTrade} className="block w-full rounded-lg px-3 py-2.5 text-left text-sm text-rose-300 hover:bg-rose-400/10 disabled:opacity-50">
-            {busy ? "Deleting…" : "Delete trade idea"}
-          </button>
-          <button type="button" onClick={() => setOpen(false)} className="block w-full rounded-lg px-3 py-2 text-left text-xs text-slate-500 hover:bg-white/5">Cancel</button>
-          {message && <p role="alert" className="max-w-64 px-3 py-2 text-xs text-rose-300">{message}</p>}
-        </div>
+    <div
+      className="relative"
+      onTouchStart={startPress}
+      onTouchEnd={cancelPress}
+      onTouchMove={cancelPress}
+      onTouchCancel={cancelPress}
+      onContextMenu={handleContextMenu}
+      onClickCapture={(event) => {
+        if (longPressed.current) {
+          event.preventDefault();
+          event.stopPropagation();
+          longPressed.current = false;
+        }
+      }}
+    >
+      {children}
+      {admin && open && (
+        <>
+          <button
+            type="button"
+            aria-label="Close trade idea actions"
+            className="fixed inset-0 z-40 cursor-default bg-black/25"
+            onClick={() => setOpen(false)}
+          />
+          <div
+            role="menu"
+            aria-label={`Actions for ${instrument}`}
+            className="absolute right-3 top-3 z-50 w-56 rounded-xl border border-white/15 bg-[#111d30] p-2 shadow-2xl shadow-black/50"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="truncate px-3 py-2 text-xs text-slate-400">{instrument} · Official trade idea</p>
+            <Link
+              role="menuitem"
+              href={`/admin/trades/${tradeId}/edit`}
+              onClick={() => setOpen(false)}
+              className="block rounded-lg px-3 py-2.5 text-sm text-blue-200 hover:bg-blue-400/10"
+            >
+              Edit trade idea
+            </Link>
+            <button
+              role="menuitem"
+              type="button"
+              disabled={busy}
+              onClick={removeTrade}
+              className="block w-full rounded-lg px-3 py-2.5 text-left text-sm text-rose-300 hover:bg-rose-400/10 disabled:opacity-50"
+            >
+              {busy ? "Deleting…" : "Delete trade idea"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="block w-full rounded-lg px-3 py-2 text-left text-xs text-slate-500 hover:bg-white/5"
+            >
+              Cancel
+            </button>
+            {message && <p role="alert" className="max-w-64 px-3 py-2 text-xs text-rose-300">{message}</p>}
+            <p className="px-3 pt-1 text-[10px] text-slate-500">Long-press this trade card or right-click it to open actions.</p>
+          </div>
+        </>
       )}
     </div>
   );
