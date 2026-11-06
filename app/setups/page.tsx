@@ -71,7 +71,7 @@ export default async function SetupsPage() {
             const tradeImages = (images ?? []).filter((image) => image.public_trade_id === trade.id);
             const tradeTargets = (targets ?? []).filter((target) => target.public_trade_id === trade.id);
             return (
-              <article key={trade.id} className="rounded-2xl border border-white/10 bg-[#101a2a] p-5 md:p-7">
+              <PublicTradeActions tradeId={trade.id} instrument={trade.instrument} imagePaths={tradeImages.map((image) => image.storage_path)} admin={isAdmin}><article key={trade.id} className="rounded-2xl border border-white/10 bg-[#101a2a] p-5 md:p-7">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-2xl font-semibold">{trade.instrument}</h2>
@@ -82,7 +82,6 @@ export default async function SetupsPage() {
                   <span className={trade.direction === "long" ? "rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300" : "rounded-full bg-rose-400/10 px-3 py-1 text-xs font-semibold text-rose-300"}>
                     {trade.direction.toUpperCase()}
                   </span>
-                  {isAdmin && <PublicTradeActions tradeId={trade.id} instrument={trade.instrument} imagePaths={tradeImages.map((image) => image.storage_path)} />}
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-4 border-y border-white/10 py-5 text-sm sm:grid-cols-3">
@@ -103,7 +102,7 @@ export default async function SetupsPage() {
                   }))}
                 />
                 <p className="mt-6 text-xs text-slate-500">Published {trade.published_at ? new Date(trade.published_at).toLocaleDateString() : ""}</p>
-              </article>
+              </article></PublicTradeActions>
             );
           })}
         </div>
