@@ -1,6 +1,8 @@
 import Link from "next/link";
 import {redirect} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
+import NewsImageGallery from "@/components/news-image-gallery";
+import NewsSetupCard from "@/components/news-setup-card";
 
 const label=(v:string)=>v.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
 export default async function NewsTradingPage(){
@@ -17,9 +19,9 @@ export default async function NewsTradingPage(){
   supabase.from("analysis_articles").select("id,slug,title,excerpt,category,published_at,is_premium_only").eq("content_state","published").order("published_at",{ascending:false}).limit(50)
  ]);
  const cards=await Promise.all((items??[]).map(async item=>{
-  let cover:string|null=null;
-  if(item.cover_image_path){const {data}=await supabase.storage.from("news-macro-media").createSignedUrl(item.cover_image_path,3600);cover=data?.signedUrl||null;}
-  return {...item,cover};
+  const paths=[...new Set([...(item.image_paths||[]),...(item.cover_image_path?[item.cover_image_path]:[])])];
+  const images=(await Promise.all(paths.map(async path=>{const {data}=await supabase.storage.from("news-macro-media").createSignedUrl(path,3600);return data?.signedUrl||null;}))).filter((x):x is string=>Boolean(x));
+  return {...item,images};
  }));
  return <main className="min-h-screen px-5 py-10 text-slate-100 md:px-12"><div className="mx-auto max-w-5xl">
   <Link href="/dashboard" className="text-xs tracking-wider text-cyan-300">← MEMBER DASHBOARD</Link>
