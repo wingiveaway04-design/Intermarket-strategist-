@@ -9,6 +9,7 @@ const events = ["NFP","CPI","PCE","FOMC","RETAIL_SALES","PPI","GDP","ISM_PMI","O
 const field = "field mt-2";
 type Setup = {
   id?: string; published_at?:string|null; title:string; event_type:string; event_name:string; release_at:string|null;
+  research_category:string; is_featured:boolean;
   phase:string; market_focus:string[]; consensus:string|null; previous_value:string|null;
   macro_view:string|null; scenario_hot:string|null; scenario_cool:string|null; trade_bias:string;
   confirmation:string|null; entry_plan:string|null; invalidation:string|null; stop_loss:string|null;
@@ -48,6 +49,7 @@ export default function NewsSetupForm({initial}:{initial?:Setup}) {
     const published=form.get("publication_status")==="published";
     const payload={
       title:String(form.get("title")||"").trim(),event_type:form.get("event_type"),
+      research_category:String(form.get("research_category")||"economic_data"),is_featured:form.get("is_featured")==="on",
       event_name:String(form.get("event_name")||"").trim(),release_at:rawDate?new Date(rawDate).toISOString():null,
       phase:form.get("phase"),market_focus:String(form.get("market_focus")||"").split(",").map(x=>x.trim()).filter(Boolean),
       consensus:form.get("consensus"),previous_value:form.get("previous_value"),macro_view:form.get("macro_view"),
@@ -78,6 +80,7 @@ export default function NewsSetupForm({initial}:{initial?:Setup}) {
     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Publish an institutional-style macro outlook, event update or post-event review. Choose exactly which registered members can read it and add a relevant editorial image.</p>
     <form onSubmit={save} className="mt-8 grid gap-5 rounded-2xl border border-white/10 bg-[#101a2a] p-5 md:grid-cols-2 md:p-7">
       <label className="text-sm md:col-span-2">Publication title<input name="title" required defaultValue={String(v("title"))} placeholder="US NFP — Labour market, rates and cross-market scenarios" className={field}/></label>
+      <label className="text-sm">Research category<select name="research_category" defaultValue={String(v("research_category")||"economic_data")} className={field}><option value="economic_data">Economic Data</option><option value="central_banks">Central Banks</option><option value="geopolitics">Geopolitics</option><option value="intermarket_analysis">Intermarket Analysis</option><option value="rates_bonds">Rates & Bonds</option><option value="commodities">Commodities</option><option value="fx_currencies">FX & Currencies</option><option value="equity_indices">Equity Indices</option></select></label>
       <label className="text-sm">Economic event<select name="event_type" defaultValue={String(v("event_type")||"NFP")} className={field}>{events.map(x=><option key={x} value={x}>{x.replaceAll("_"," ")}</option>)}</select></label>
       <label className="text-sm">Event name<input name="event_name" required defaultValue={String(v("event_name"))} placeholder="US NFP — October 2026" className={field}/></label>
       <label className="text-sm">Release date and time<input name="release_at" type="datetime-local" defaultValue={localDate} className={field}/></label>
@@ -98,6 +101,7 @@ export default function NewsSetupForm({initial}:{initial?:Setup}) {
       <label className="text-sm md:col-span-2">Post-event review<textarea name="post_event_review" rows={3} defaultValue={String(v("post_event_review"))} className={field}/></label>
       <section className="rounded-xl border border-white/10 bg-black/15 p-4 md:col-span-2"><p className="text-sm font-semibold">Publication access</p><p className="mt-1 text-xs leading-5 text-slate-400">Free members can read Free publications. Premium members can read both Free and Premium publications. Visitors cannot read the full publication.</p><select name="access_level" defaultValue={initial?.access_level||"premium"} className={field}><option value="premium">Premium members only</option><option value="free">All registered members (Free + Premium)</option></select></section>
       <label className="text-sm md:col-span-2">Publication image gallery<input name="gallery_images" type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif" className={field} onChange={e=>setImageNames(Array.from(e.target.files||[]).map(file=>file.name))}/><span className="mt-2 block text-xs leading-5 text-slate-500">Select multiple relevant editorial images at once: central-bank or Treasury imagery, economic-data visuals, yield curves, currency markets, gold, oil or equity-index trading. JPG, PNG, WebP or AVIF · maximum 10 MB per image. New selections replace the existing gallery.</span>{imageNames.length>0&&<span className="mt-1 block text-xs text-cyan-300">Selected: {imageNames.join(", ")}</span>}{(initial?.image_paths?.length||initial?.cover_image_path)&&<span className="mt-1 block text-xs text-slate-500">Existing gallery: {(initial?.image_paths||[initial?.cover_image_path].filter(Boolean)).length} image(s). Leave empty to keep it.</span>}</label>
+      <label className="flex items-center gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[.05] p-4 text-sm md:col-span-2"><input type="checkbox" name="is_featured" defaultChecked={initial?.is_featured??false} className="h-4 w-4 accent-amber-300"/><span><span className="block font-semibold text-amber-100">Feature this research</span><span className="mt-1 block text-xs text-slate-400">Featured publications receive a prominent position in the member Research Library.</span></span></label>
       <label className="text-sm md:col-span-2">Publication status<select name="publication_status" defaultValue={String(v("publication_status")||"draft")} className={field}><option value="draft">Save as draft</option><option value="published">Publish now</option></select></label>
       {error&&<p role="alert" className="text-sm text-rose-300 md:col-span-2">{error}</p>}
       <div className="flex flex-wrap gap-3 md:col-span-2"><button disabled={saving} className="rounded-lg bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">{saving?"Saving…":initial?"Save changes":"Save News Setup"}</button><Link href="/admin" className="rounded-lg border border-white/15 px-5 py-3 text-sm">Cancel</Link></div>
