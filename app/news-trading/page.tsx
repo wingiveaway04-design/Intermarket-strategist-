@@ -30,7 +30,7 @@ export default async function NewsTradingPage(){
   {error&&<p role="alert" className="mt-8 rounded-xl border border-rose-400/30 p-4 text-sm text-rose-200">{error.message}</p>}
   {!cards.length&&!error&&<div className="mt-8 rounded-2xl border border-white/10 bg-[#101a2a] p-8 text-center text-sm text-slate-400">No News & Macro publications have been published yet.</div>}
   <div className="mt-8 grid gap-5">{cards.map(item=><article key={item.id} className="overflow-hidden rounded-2xl border border-white/10 bg-[#101a2a]">
-   {item.cover&&<img src={item.cover} alt={item.title+" macro research cover"} className="max-h-[420px] w-full object-cover"/>}
+   <NewsImageGallery images={item.images} title={item.title}/>
    <div className="p-5 md:p-7"><div className="flex flex-wrap items-center gap-2 text-xs"><span className="rounded-full bg-cyan-400/10 px-3 py-1 text-cyan-200">{label(item.event_type)}</span><span className="rounded-full bg-violet-400/10 px-3 py-1 text-violet-200">{label(item.phase)}</span><span className={item.access_level==="premium"?"rounded-full bg-amber-300/10 px-3 py-1 text-amber-200":"rounded-full bg-emerald-300/10 px-3 py-1 text-emerald-200"}>{item.access_level==="premium"?"Premium publication":"Member publication"}</span><span className="text-slate-500">{item.release_at?new Date(item.release_at).toLocaleString():"Release time not specified"}</span></div>
    <h2 className="mt-4 text-2xl font-semibold">{item.title}</h2><p className="mt-1 text-sm text-slate-400">{item.event_name}</p>
    {!!item.market_focus?.length&&<p className="mt-4 text-xs text-cyan-200">Markets: {item.market_focus.join(" · ")}</p>}
