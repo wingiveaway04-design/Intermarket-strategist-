@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 const events = ["NFP","CPI","PCE","FOMC","RETAIL_SALES","PPI","GDP","ISM_PMI","OTHER"];
 const field = "field mt-2";
 type Setup = {
-  id?: string; title:string; event_type:string; event_name:string; release_at:string|null;
+  id?: string; published_at?:string|null; title:string; event_type:string; event_name:string; release_at:string|null;
   phase:string; market_focus:string[]; consensus:string|null; previous_value:string|null;
   macro_view:string|null; scenario_hot:string|null; scenario_cool:string|null; trade_bias:string;
   confirmation:string|null; entry_plan:string|null; invalidation:string|null; stop_loss:string|null;
