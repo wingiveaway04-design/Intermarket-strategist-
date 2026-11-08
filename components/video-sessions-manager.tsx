@@ -11,7 +11,7 @@ export default function VideoSessionsManager({initial}:{initial:Session[]}) {
  const router=useRouter(); const [items,setItems]=useState(initial); const [editing,setEditing]=useState<Session|null>(null); const [saving,setSaving]=useState(false); const [error,setError]=useState("");
  async function save(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");
-  const form=new FormData(e.currentTarget);const supabase=createClient();
+  const formElement=e.currentTarget;const form=new FormData(formElement);const supabase=createClient();
   const {data:{user}}=await supabase.auth.getUser();
   if(!user){setError("Please sign in again.");setSaving(false);return}
   const {data:profile}=await supabase.from("profiles").select("role").eq("id",user.id).maybeSingle();
