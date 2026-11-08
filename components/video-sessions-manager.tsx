@@ -27,7 +27,7 @@ export default function VideoSessionsManager({initial}:{initial:Session[]}) {
   const payload={title,description:String(form.get("description")||"").trim()||null,session_type:type,market_focus:String(form.get("market_focus")||"").split(",").map(x=>x.trim()).filter(Boolean),starts_at:raw?new Date(raw).toISOString():null,duration_minutes:form.get("duration_minutes")?Number(form.get("duration_minutes")):null,join_url:type==="live"?join:null,recording_url:recording,access_level:String(form.get("access_level"))==="free"?"free":"premium",publication_status:String(form.get("publication_status")),created_by:user.id,updated_at:new Date().toISOString()};
   const result=editing?await supabase.from("video_sessions").update(payload).eq("id",editing.id).select().single():await supabase.from("video_sessions").insert(payload).select().single();
   if(result.error||!result.data){setError(result.error?.message||"Could not save session.");setSaving(false);return}
-  setItems(old=>editing?old.map(x=>x.id===editing.id?result.data as Session:x):[result.data as Session,...old]);setEditing(null);e.currentTarget.reset();router.refresh();setSaving(false);
+  setItems(old=>editing?old.map(x=>x.id===editing.id?result.data as Session:x):[result.data as Session,...old]);setEditing(null);formElement.reset();router.refresh();setSaving(false);
  }
  async function remove(id:string){if(!confirm("Permanently delete this session?"))return;const supabase=createClient();const {error}=await supabase.from("video_sessions").delete().eq("id",id);if(error){setError(error.message);return}setItems(old=>old.filter(x=>x.id!==id));router.refresh()}
  return <div className="mt-7 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,.8fr)]">
