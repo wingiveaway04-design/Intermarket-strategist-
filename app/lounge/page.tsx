@@ -7,7 +7,7 @@ export default async function PremiumLoungePage(){
  const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser(); if(!user)redirect("/login");
  const {data:profile}=await supabase.from("profiles").select("role").eq("id",user.id).single();
  const isAdmin=profile?.role==="admin"; const {data:premium}=await supabase.rpc("has_premium_access",{check_user_id:user.id}); if(!premium&&!isAdmin)redirect("/pricing");
- const {data:rows}=await supabase.from("premium_chat_messages").select("id,user_id,message_type,body,media_path,media_type,file_name,reply_to_id,mentioned_user_ids,created_at").order("created_at",{ascending:true}).limit(150);
+ const {data:rows}=await supabase.from("premium_chat_messages").select("id,user_id,message_type,body,media_path,media_type,file_name,reply_to_id,mentioned_user_ids,is_pinned,pinned_at,created_at").order("created_at",{ascending:true}).limit(150);
  const {data:profiles}=await supabase.from("profiles").select("id,username,display_name,avatar_path,role").order("username");
  const profileMap=new Map((profiles||[]).map(p=>[p.id,p]));
  const messages=await Promise.all((rows||[]).map(async m=>{let media_url:string|null=null;if(m.media_path){const {data}=await supabase.storage.from("premium-lounge").createSignedUrl(m.media_path,3600);media_url=data?.signedUrl||null;}const parent=(rows||[]).find(p=>p.id===m.reply_to_id);return {...m,media_url,profiles:profileMap.get(m.user_id)||null,reply_preview:parent?{body:parent.body,message_type:parent.message_type,username:profileMap.get(parent.user_id)?.username||"member"}:null};}));
