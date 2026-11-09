@@ -215,14 +215,64 @@ export default async function DashboardPage() {
 
       <section className="mt-9">
         <PanelHeading eyebrow="Market intelligence" title="Research & event watch" href="/news-trading" linkText="Open Macro Desk" />
-        <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
-          <div className="rounded-2xl border border-white/10 bg-[#101e30] p-4 sm:p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold">Event scenarios</h3><p className="mt-1 text-[11px] text-slate-500">Published macro outlooks and market bias</p></div><span className="rounded-full border border-cyan-200/10 bg-cyan-200/[.05] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-cyan-100">{events.length} available</span></div>
-            {events.length ? <div className="space-y-2">{events.map(event => <Link key={event.id} href="/news-trading" className="block rounded-xl border border-white/[.07] bg-[#0b1728] p-3.5 transition hover:border-cyan-200/20 hover:bg-cyan-200/[.025]"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-slate-100">{event.title}</p><div className="mt-2 flex flex-wrap gap-1.5"><span className="rounded-md bg-white/[.05] px-2 py-1 text-[9px] capitalize text-slate-400">{event.event_type.replaceAll("_", " ")}</span><span className="rounded-md bg-white/[.05] px-2 py-1 text-[9px] capitalize text-slate-400">{event.phase.replaceAll("_", " ")}</span>{event.market_focus && <span className="rounded-md bg-white/[.05] px-2 py-1 text-[9px] text-slate-400">{event.market_focus}</span>}</div></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${event.trade_bias === "bullish" ? "bg-emerald-300/10 text-emerald-200" : event.trade_bias === "bearish" ? "bg-rose-300/10 text-rose-200" : "bg-slate-300/10 text-slate-300"}`}>{event.trade_bias}</span></div>{event.release_at && <p className="mt-3 border-t border-white/[.06] pt-2 text-[10px] text-slate-500">Event time · {new Date(event.release_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" })} WAT</p>}</Link>)}</div> : <EmptyState>No published event outlooks are available to your account yet.</EmptyState>}
+        <div className="grid gap-4 xl:grid-cols-[1.08fr_.92fr]">
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-cyan-200/10 bg-[linear-gradient(145deg,#102238,#0b192a)] p-4 sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-cyan-200/70">Macro event watch</p>
+                <h3 className="mt-1 text-sm font-semibold text-slate-100">Published event scenarios</h3>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500">Analyst outlooks, event context and directional market bias.</p>
+              </div>
+              <span className="rounded-full border border-cyan-200/15 bg-cyan-200/[.06] px-3 py-1.5 text-[10px] font-semibold text-cyan-100">{events.length} published</span>
+            </div>
+            {events.length ? <div className="space-y-2.5">{events.map((event, index) => <Link key={event.id} href="/news-trading" className="group block rounded-xl border border-white/[.07] bg-[#091626]/75 p-3.5 transition hover:border-cyan-200/25 hover:bg-cyan-200/[.035] sm:p-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200/10 bg-cyan-200/[.06] text-[10px] font-bold text-cyan-100">{String(index + 1).padStart(2, "0")}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h4 className="min-w-0 flex-1 text-sm font-semibold leading-5 text-slate-100 transition group-hover:text-cyan-100">{event.title}</h4>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${event.trade_bias === "bullish" ? "bg-emerald-300/10 text-emerald-200" : event.trade_bias === "bearish" ? "bg-rose-300/10 text-rose-200" : "bg-slate-300/10 text-slate-300"}`}>{event.trade_bias || "neutral"}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {event.event_type && <span className="rounded-md border border-white/[.06] bg-white/[.035] px-2 py-1 text-[9px] capitalize text-slate-400">{event.event_type.replaceAll("_", " ")}</span>}
+                    {event.phase && <span className="rounded-md border border-white/[.06] bg-white/[.035] px-2 py-1 text-[9px] capitalize text-slate-400">{event.phase.replaceAll("_", " ")}</span>}
+                    {event.market_focus && <span className="rounded-md border border-white/[.06] bg-white/[.035] px-2 py-1 text-[9px] text-slate-400">{event.market_focus}</span>}
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/[.06] pt-2.5">
+                    <span className="text-[10px] text-slate-500">{event.release_at ? `Scheduled · ${new Date(event.release_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" })} WAT` : "Release time not specified"}</span>
+                    <span className="text-[10px] font-semibold text-cyan-200 opacity-80 transition group-hover:opacity-100">View scenario ↗</span>
+                  </div>
+                </div>
+              </div>
+            </Link>)}</div> : <EmptyState>No published event outlooks are available to your account yet.</EmptyState>}
+            <Link href="/macro-radar" className="mt-4 inline-flex rounded-lg border border-cyan-200/15 bg-cyan-200/[.05] px-3 py-2 text-[10px] font-semibold text-cyan-100 transition hover:border-cyan-200/30 hover:bg-cyan-200/[.09]">Open Macro Event Radar ↗</Link>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-[#101e30] p-4 sm:p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold">Research publications</h3><p className="mt-1 text-[11px] text-slate-500">Latest analyst notes and market studies</p></div><span className="rounded-full border border-white/[.07] bg-white/[.03] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-slate-400">{research.length} available</span></div>
-            {research.length ? <div className="space-y-2">{research.map(article => <Link key={article.id} href="/analysis" className="block rounded-xl border border-white/[.07] bg-[#0b1728] p-3.5 transition hover:border-cyan-200/20 hover:bg-cyan-200/[.025]"><div className="flex items-start justify-between gap-2"><p className="text-sm font-semibold leading-5 text-slate-100">{article.title}</p>{article.is_premium_only && <span className="shrink-0 rounded bg-amber-300/10 px-2 py-1 text-[9px] font-semibold text-amber-200">PREMIUM</span>}</div><p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">{article.excerpt || article.category.replaceAll("_", " ")}</p><div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/[.06] pt-2"><span className="text-[9px] font-semibold uppercase tracking-wider text-cyan-200/70">{article.category.replaceAll("_", " ")}</span>{article.published_at && <span className="text-[10px] text-slate-600">{new Date(article.published_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}</span>}</div></Link>)}</div> : <EmptyState>No research articles are published for your access level yet.</EmptyState>}
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-blue-200/10 bg-[linear-gradient(145deg,#14243b,#0b192a)] p-4 sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-blue-200/70">Analyst research</p>
+                <h3 className="mt-1 text-sm font-semibold text-slate-100">Latest publications</h3>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500">Macro notes, rates analysis and cross-market perspectives.</p>
+              </div>
+              <span className="rounded-full border border-blue-200/15 bg-blue-200/[.06] px-3 py-1.5 text-[10px] font-semibold text-blue-100">{research.length} available</span>
+            </div>
+            {research.length ? <div className="space-y-2.5">{research.map((article, index) => <Link key={article.id} href="/analysis" className="group block rounded-xl border border-white/[.07] bg-[#091626]/75 p-3.5 transition hover:border-blue-200/25 hover:bg-blue-200/[.035] sm:p-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-blue-200/10 bg-blue-200/[.06] text-[10px] font-bold text-blue-100">{String(index + 1).padStart(2, "0")}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h4 className="min-w-0 flex-1 text-sm font-semibold leading-5 text-slate-100 transition group-hover:text-blue-100">{article.title}</h4>
+                    {article.is_premium_only && <span className="shrink-0 rounded-md border border-amber-200/15 bg-amber-300/[.07] px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-amber-200">Premium</span>}
+                  </div>
+                  <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-400">{article.excerpt || article.category.replaceAll("_", " ")}</p>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/[.06] pt-2.5">
+                    <span className="text-[9px] font-semibold uppercase tracking-wider text-blue-200/75">{article.category.replaceAll("_", " ")}</span>
+                    <span className="text-[10px] text-slate-500">{article.published_at ? new Date(article.published_at).toLocaleDateString("en-NG", { dateStyle: "medium" }) : "Publication date unavailable"}</span>
+                  </div>
+                </div>
+              </div>
+            </Link>)}</div> : <EmptyState>No research articles are published for your access level yet.</EmptyState>}
+            <Link href="/analysis" className="mt-4 inline-flex rounded-lg border border-blue-200/15 bg-blue-200/[.05] px-3 py-2 text-[10px] font-semibold text-blue-100 transition hover:border-blue-200/30 hover:bg-blue-200/[.09]">Open Research Library ↗</Link>
           </div>
         </div>
       </section>
