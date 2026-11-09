@@ -92,7 +92,7 @@ export default async function DashboardPage() {
       </header>
 
       <nav aria-label="Terminal sections" className="mt-3 flex gap-2 overflow-x-auto rounded-xl border border-white/[.08] bg-[#0d1a2b] p-2 text-xs whitespace-nowrap">
-        {[["Overview","#overview"],["Live sessions","/sessions#live-sessions"],["Video library","/sessions#session-library"],["News & Macro","/news-trading"],["Trade ideas","/setups"],["Research","/analysis"],["Community","/lounge"],["My journal","#journal"]].map(([label,href]) => <Link key={label} href={href} className="rounded-lg px-3 py-2 text-slate-300 transition hover:bg-cyan-200/10 hover:text-cyan-100">{label}</Link>)}
+        {[["Overview","#overview"],["Live sessions","/sessions#live-sessions"],["Video library","/sessions#session-library"],["News & Macro","/news-trading"],["Trade ideas","/setups"],["Research","/analysis"],["Community","/lounge"],["Private messages","/messages"],["My journal","#journal"]].map(([label,href]) => <Link key={label} href={href} className="rounded-lg px-3 py-2 text-slate-300 transition hover:bg-cyan-200/10 hover:text-cyan-100">{label}</Link>)}
       </nav>
 
       <section id="overview" className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -148,7 +148,7 @@ export default async function DashboardPage() {
           <QuickLink href="/analysis" icon="▥" title="Research library" description="Browse published macro and intermarket analysis." />
           <QuickLink href="/news-trading" icon="◈" title="News & Macro Desk" description="Review economic-event scenarios and macro outlooks." />
           <QuickLink href={hasPremium ? "/lounge" : "/pricing"} icon="☏" title="Community room" description={hasPremium ? "Join the shared Premium analyst–member discussion." : "Unlock the private member community."} locked={!hasPremium} />
-          <QuickLink href={hasPremium ? "/lounge" : "/pricing"} icon="✉" title="Private messages" description={hasPremium ? "Open the Lounge and select DMs to message members privately." : "Unlock private member messaging."} locked={!hasPremium} />
+          <QuickLink href={hasPremium ? "/messages" : "/pricing"} icon="✉" title="Private messages" description={hasPremium ? "Open your dedicated private inbox and message members directly." : "Unlock private member messaging."} locked={!hasPremium} />
           <QuickLink href={hasPremium || isAdmin ? "/sessions#live-sessions" : "/pricing"} icon="●" title="Live sessions" description="See upcoming briefings and join live analyst rooms." locked={!hasPremium && !isAdmin} />
           <QuickLink href={hasPremium || isAdmin ? "/sessions#session-library" : "/pricing"} icon="▶" title="Video library" description="Revisit recorded briefings and market breakdowns." locked={!hasPremium && !isAdmin} />
           <QuickLink href="/pricing" icon="✦" title="Membership plans" description="Review membership options and access." />
