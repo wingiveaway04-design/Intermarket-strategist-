@@ -13,7 +13,7 @@ export default async function AdminCotPage() {
 
   const { data: reports, error } = await supabase
     .from("cot_reports")
-    .select("id,title,market,report_date,report_type,managed_money_long,managed_money_short,managed_money_net,weekly_net_change,open_interest,summary,analysis_notes,source_url,created_at")
+    .select("id,title,market,report_date,report_type,publication_status,access_level,published_at,managed_money_long,managed_money_short,managed_money_net,weekly_net_change,open_interest,summary,analysis_notes,source_url,created_at")
     .order("report_date", { ascending: false })
     .limit(100);
 
