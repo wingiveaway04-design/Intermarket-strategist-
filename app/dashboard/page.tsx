@@ -102,7 +102,7 @@ export default async function DashboardPage() {
     ...analyticsTrades.map(t => t.market),
     ...publicCalls.map(call => call.market),
     ...events.map(event => event.market_focus),
-  ].filter((value): value is string => Boolean(value && value.trim()))
+  ].filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     .map(value => value.trim().replaceAll("_", " ")))].sort((a, b) => a.localeCompare(b));
   const latestResearch = research[0] ?? null;
 
