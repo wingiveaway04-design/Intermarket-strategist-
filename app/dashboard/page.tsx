@@ -185,22 +185,32 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section id="journal-analytics" aria-label="Journal performance analytics" className="mt-7 rounded-[22px] border border-cyan-200/10 bg-gradient-to-b from-[#102238] to-[#0b192a] p-4 shadow-[0_18px_45px_rgba(0,0,0,.2)] sm:p-5">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Journal analytics</p><h2 className="mt-1 text-lg font-semibold text-slate-100">Execution performance</h2><p className="mt-1 text-[11px] text-slate-500">Latest {analyticsTrades.length.toLocaleString("en-NG")} records · {Number(journalAnalyticsResult.count ?? analyticsTrades.length).toLocaleString("en-NG")} total journal records</p></div>
-          <Link href="/barometer" className="text-xs font-semibold text-cyan-200 hover:text-cyan-100">Detailed news-trade analytics ↗</Link>
+      <section id="journal-analytics" aria-label="Journal performance analytics" className="mt-7 overflow-hidden rounded-[22px] border border-cyan-200/10 bg-[linear-gradient(145deg,rgba(16,34,56,.96),rgba(9,25,42,.98))] p-4 shadow-[0_18px_45px_rgba(0,0,0,.2)] sm:p-5">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Journal analytics</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-100">Execution performance</h2>
+            <p className="mt-1 text-[11px] leading-5 text-slate-400">A closer look at completed trades and realized risk performance.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/[.08] bg-white/[.035] px-2.5 py-1.5 text-[9px] font-medium text-slate-400">{analyticsTrades.length.toLocaleString("en-NG")} of {Number(journalAnalyticsResult.count ?? analyticsTrades.length).toLocaleString("en-NG")} records</span>
+            <Link href="/barometer" className="rounded-lg border border-cyan-200/15 bg-cyan-200/[.05] px-3 py-1.5 text-[10px] font-semibold text-cyan-100 transition hover:border-cyan-200/30 hover:bg-cyan-200/[.09]">News-trade analytics ↗</Link>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          <Metric label="Closed trades" value={String(closedTrades.length)} detail={wins + " wins · " + losses + " losses · " + breakevenTrades + " breakeven"} accent="blue" />
-          <Metric label="Win rate" value={winRate === null ? "—" : String(winRate) + "%"} detail="Breakeven trades excluded" accent="green" />
-          <Metric label="Profit factor" value={profitFactor === null ? "—" : Number.isFinite(profitFactor) ? profitFactor.toFixed(2) : "∞"} detail="Gross profit R ÷ gross loss R" accent="cyan" />
-          <Metric label="Average result" value={closedTrades.length ? ((netR / closedTrades.length) > 0 ? "+" : "") + (netR / closedTrades.length).toFixed(2) + "R" : "—"} detail="Average realized R per closed trade" accent="amber" />
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
+          <div className="rounded-xl border border-blue-200/[.10] bg-blue-300/[.035] p-3 sm:p-3.5"><Metric label="Closed trades" value={String(closedTrades.length)} detail={wins + " wins · " + losses + " losses · " + breakevenTrades + " breakeven"} accent="blue" /></div>
+          <div className="rounded-xl border border-emerald-200/[.10] bg-emerald-300/[.035] p-3 sm:p-3.5"><Metric label="Win rate" value={winRate === null ? "—" : String(winRate) + "%"} detail="Breakeven trades excluded" accent="green" /></div>
+          <div className="rounded-xl border border-cyan-200/[.10] bg-cyan-300/[.035] p-3 sm:p-3.5"><Metric label="Profit factor" value={profitFactor === null ? "—" : Number.isFinite(profitFactor) ? profitFactor.toFixed(2) : "∞"} detail="Gross profit R ÷ gross loss R" accent="cyan" /></div>
+          <div className="rounded-xl border border-amber-200/[.10] bg-amber-300/[.035] p-3 sm:p-3.5"><Metric label="Average result" value={closedTrades.length ? ((netR / closedTrades.length) > 0 ? "+" : "") + (netR / closedTrades.length).toFixed(2) + "R" : "—"} detail="Realized R per closed trade" accent="amber" /></div>
         </div>
-        <div className="mt-4 rounded-xl border border-white/[.06] bg-[#091525] p-3.5">
-          <div className="mb-3 flex items-center justify-between gap-2"><h3 className="text-xs font-semibold text-slate-200">Performance by market</h3><span className="text-[9px] text-slate-600">Latest 1,000 records at most</span></div>
-          {marketPerformance.length ? <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{marketPerformance.map(item => <div key={item.market} className="rounded-lg border border-white/[.06] bg-white/[.02] p-3"><p className="truncate text-[10px] font-semibold uppercase tracking-wider text-slate-400">{item.market.replaceAll("_", " ")}</p><div className="mt-2 flex items-end justify-between gap-2"><span className="text-xs text-slate-500">{item.count} closed</span><span className={`text-sm font-semibold tabular-nums ${item.net > 0 ? "text-emerald-200" : item.net < 0 ? "text-rose-200" : "text-slate-200"}`}>{item.net > 0 ? "+" : ""}{item.net.toFixed(2)}R</span></div><p className="mt-1 text-[10px] text-slate-500">Win rate · {item.winRate === null ? "—" : item.winRate + "%"}</p></div>)}</div> : <p className="text-xs text-slate-500">Close and record trades with a realized R result to populate market performance.</p>}
+        <div className="mt-4 rounded-xl border border-white/[.07] bg-[#091525]/80 p-3.5 sm:p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div><h3 className="text-xs font-semibold text-slate-100">Performance by market</h3><p className="mt-1 text-[10px] text-slate-500">Closed trade outcomes grouped by market category</p></div>
+            <span className="rounded-full border border-white/[.07] bg-white/[.025] px-2.5 py-1 text-[9px] text-slate-500">Latest 1,000 records at most</span>
+          </div>
+          {marketPerformance.length ? <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">{marketPerformance.map(item => <div key={item.market} className="min-w-0 rounded-xl border border-white/[.07] bg-white/[.025] p-3.5"><p className="truncate text-[10px] font-semibold uppercase tracking-wider text-slate-400">{item.market.replaceAll("_", " ")}</p><div className="mt-3 flex items-end justify-between gap-2"><div><p className="text-[9px] uppercase tracking-wider text-slate-600">Closed</p><p className="mt-1 text-sm font-semibold tabular-nums text-slate-200">{item.count}</p></div><div className="text-right"><p className="text-[9px] uppercase tracking-wider text-slate-600">Net realized</p><p className={`mt-1 text-sm font-semibold tabular-nums ${item.net > 0 ? "text-emerald-200" : item.net < 0 ? "text-rose-200" : "text-slate-200"}`}>{item.net > 0 ? "+" : ""}{item.net.toFixed(2)}R</p></div></div><div className="mt-3 flex items-center justify-between border-t border-white/[.06] pt-2"><span className="text-[10px] text-slate-500">Win rate</span><span className="text-[10px] font-semibold tabular-nums text-slate-300">{item.winRate === null ? "—" : item.winRate + "%"}</span></div></div>)}</div> : <p className="rounded-lg border border-dashed border-white/[.08] px-3 py-5 text-center text-xs leading-5 text-slate-500">Market performance will appear when completed journal trades have a recorded realized R result.</p>}
         </div>
-        <p className="mt-3 text-[10px] leading-5 text-slate-600">Performance calculations use completed records with a realized R value. Win rate excludes breakeven; open, cancelled and unscored trades are excluded. The detailed news-trading Barometer uses only trades classified as direct news trades.</p>
+        <p className="mt-3 text-[10px] leading-5 text-slate-500">Methodology: completed trades with a recorded realized R are included. Win rate excludes breakeven trades. Open, cancelled and unscored trades are excluded. The separate News-trade Barometer includes only trades classified as direct news trades.</p>
       </section>
 
       <section className="mt-9">
