@@ -12,10 +12,11 @@ function Metric({ label, value, detail, accent = "cyan" }: { label: string; valu
     green: "border-emerald-300/15 bg-emerald-300/[.06] text-emerald-200",
     amber: "border-amber-300/15 bg-amber-300/[.06] text-amber-200",
   };
-  return <div className={`rounded-2xl border p-4 ${tones[accent]}`}>
-    <p className="text-[10px] font-semibold uppercase tracking-[.16em] opacity-70">{label}</p>
-    <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-50">{value}</p>
-    <p className="mt-1 text-[11px] text-slate-400">{detail}</p>
+  return <div className={`group relative overflow-hidden rounded-2xl border p-4 shadow-[0_12px_35px_rgba(0,0,0,.14)] transition duration-200 hover:-translate-y-0.5 hover:border-white/15 ${tones[accent]}`}>
+    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-current to-transparent opacity-50" />
+    <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-bold uppercase tracking-[.17em] opacity-75">{label}</p><span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" /></div>
+    <p className="mt-3 text-[clamp(1.45rem,2vw,1.9rem)] font-semibold tracking-tight text-slate-50">{value}</p>
+    <p className="mt-1 text-[11px] leading-5 text-slate-400">{detail}</p>
   </div>;
 }
 
@@ -80,9 +81,11 @@ export default async function DashboardPage() {
   const research = researchResult.data ?? [];
   const publicCalls = publicTradeResult.data ?? [];
 
-  return <main className="min-h-screen bg-[#081321] px-3 py-4 text-slate-100 sm:px-5 sm:py-6 lg:px-8">
-    <div className="mx-auto max-w-[1440px]">
-      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#101e30] px-4 py-4 sm:px-6">
+  return <main className="relative min-h-screen overflow-hidden bg-[#07111f] px-3 py-4 text-slate-100 sm:px-5 sm:py-6 lg:px-8">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_12%_0%,rgba(34,211,238,.09),transparent_34%),radial-gradient(ellipse_at_90%_18%,rgba(59,130,246,.07),transparent_30%)]" />
+    <div className="relative z-10 mx-auto max-w-[1480px]">
+      <header className="relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-2xl border border-cyan-100/10 bg-gradient-to-r from-[#10263b] via-[#102033] to-[#111d30] px-4 py-5 shadow-[0_18px_50px_rgba(0,0,0,.2)] sm:px-6">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 h-64 w-64 rounded-full border border-cyan-100/[.07] shadow-[0_0_0_28px_rgba(255,255,255,.012),0_0_0_58px_rgba(255,255,255,.01)]" />
         <div className="min-w-0">
           <Link href="/" className="text-[10px] font-bold tracking-[.22em] text-cyan-200">INTERMARKET STRATEGIST</Link>
           <div className="mt-2 flex flex-wrap items-center gap-2"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">AIS Terminal</h1>{hasPremium && <PremiumBadge />}</div>
@@ -97,8 +100,8 @@ export default async function DashboardPage() {
 
       <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <div className="sticky top-4 rounded-2xl border border-white/[.08] bg-[#0d1a2b]/95 p-3">
-            <p className="px-3 pb-3 pt-2 text-[9px] font-bold uppercase tracking-[.2em] text-slate-500">Terminal workspace</p>
+          <div className="sticky top-4 rounded-2xl border border-white/[.09] bg-[#0b192a]/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,.22)] backdrop-blur-xl">
+            <div className="mb-3 flex items-center gap-2 px-3 pb-3 pt-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-200/20 bg-cyan-200/[.08] text-[10px] font-black text-cyan-100">AIS</span><div><p className="text-[9px] font-bold uppercase tracking-[.18em] text-slate-300">Terminal workspace</p><p className="mt-0.5 text-[9px] text-slate-600">Research · Execution · Review</p></div></div>
             <div className="space-y-1">
               {[["⌂","Overview","#overview"],["◷","Live sessions","/sessions#live-sessions"],["▶","Video library","/sessions#session-library"],["◈","News & Macro","/news-trading"],["↗","Trade ideas","/setups"],["▤","Research library","/analysis"],["▥","COT reports","/cot-reports"],["◎","Community room","/lounge"],["✉","Private messages","/messages"],["▣","My journal","#journal"]].map(([icon,label,href], index) => <Link key={label} href={href} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition ${index === 0 ? "border border-cyan-200/15 bg-cyan-200/[.08] text-cyan-100" : "text-slate-400 hover:bg-white/[.04] hover:text-slate-100"}`}><span className="w-4 text-center text-sm">{icon}</span>{label}</Link>)}
             </div>
@@ -117,12 +120,13 @@ export default async function DashboardPage() {
       </section>
 
       <section className="mt-4 grid gap-3 lg:grid-cols-[1.55fr_1fr]">
-        <div className="relative overflow-hidden rounded-2xl border border-cyan-200/15 bg-gradient-to-br from-[#12304a] via-[#10243a] to-[#101c2d] p-5 sm:p-6">
+        <div className="relative overflow-hidden rounded-2xl border border-cyan-200/20 bg-[linear-gradient(125deg,#12334c_0%,#10263d_48%,#101b2d_100%)] p-5 shadow-[0_20px_60px_rgba(0,0,0,.22)] sm:p-7">
           <div className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full border border-cyan-200/10" /><div className="pointer-events-none absolute -right-2 -top-6 h-36 w-36 rounded-full border border-cyan-200/10" />
           <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-cyan-200/75">Analyst workspace</p>
           <h2 className="mt-3 max-w-xl text-2xl font-semibold leading-tight sm:text-3xl">Connect the macro picture to the market structure.</h2>
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Review published event scenarios, follow official trade ideas, and keep your own execution record in one place.</p>
-          <div className="mt-5 flex flex-wrap gap-2"><Link href="/news-trading" className="rounded-lg bg-cyan-200 px-4 py-2.5 text-xs font-semibold text-[#082033] hover:bg-cyan-100">Open Macro Desk ↗</Link><Link href="/journal/new" className="rounded-lg border border-white/15 bg-white/[.04] px-4 py-2.5 text-xs font-semibold text-slate-100 hover:bg-white/[.08]">＋ Record a trade</Link></div>
+          <div className="mt-5 flex flex-wrap gap-2"><Link href="/news-trading" className="rounded-lg bg-cyan-200 px-4 py-2.5 text-xs font-bold text-[#082033] shadow-[0_6px_20px_rgba(34,211,238,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-100">Open Macro Desk ↗</Link><Link href="/journal/new" className="rounded-lg border border-white/15 bg-white/[.05] px-4 py-2.5 text-xs font-semibold text-slate-100 transition hover:border-cyan-100/25 hover:bg-white/[.09]">＋ Record a trade</Link></div>
+          <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[.09] pt-4 text-[9px] font-semibold uppercase tracking-[.15em] text-slate-400"><span><span className="mr-1.5 text-cyan-200">01</span> Macro context</span><span><span className="mr-1.5 text-cyan-200">02</span> Intermarket confirmation</span><span><span className="mr-1.5 text-cyan-200">03</span> Disciplined execution</span></div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#101e30] p-5">
           <PanelHeading eyebrow="Account status" title="Membership & access" />
