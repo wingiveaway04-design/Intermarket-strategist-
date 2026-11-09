@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import RecordDeleteButton from "@/components/record-delete-button";
 import TerminalTopNav from "./terminal-top-nav";
+import JournalWorkspace from "@/components/journal-workspace";
 
 function Metric({ label, value, detail, accent = "cyan" }: { label: string; value: string; detail: string; accent?: "cyan" | "blue" | "green" | "amber" }) {
   const tones = {
@@ -341,19 +342,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section id="journal" className="mt-9">
-        <PanelHeading eyebrow="Personal trading journal" title="Recent journal activity" href="/journal/new" linkText="＋ Add trade" />
-        {tradeResult.error ? <EmptyState>Your journal could not be loaded. Please refresh and try again.</EmptyState> : trades.length ? <div className="grid gap-3 xl:grid-cols-2">{trades.slice(0, 6).map(trade => {
-          const screenshot = imageByTrade.get(trade.id);
-          return <article key={trade.id} className="overflow-hidden rounded-2xl border border-white/10 bg-[#101e30] p-4 sm:p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-semibold">{trade.instrument}</h3><p className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">{(trade.market || "").replaceAll("_", " ")} · {trade.direction}</p>{trade.news_trade_attribution === "direct_news" && <p className="mt-2 text-[10px] text-cyan-200">News trade · {trade.news_event_type || "Event"}{trade.news_event_name ? " · " + trade.news_event_name : ""}</p>}</div><div className="flex items-center gap-2"><span className="rounded-full bg-white/[.06] px-2.5 py-1 text-[10px] text-slate-300">{(trade.status || "").replaceAll("_", " ")}</span><Link href={"/journal/" + trade.id} className="text-xs font-medium text-cyan-200">Open ↗</Link><RecordDeleteButton kind="journal" id={trade.id} /></div></div>
-            <div className="mt-4 grid grid-cols-3 gap-2"><div className="rounded-lg bg-black/20 p-2.5"><p className="text-[10px] text-slate-500">Entry</p><p className="mt-1 text-xs font-medium">{trade.entry_price ?? "—"}</p></div><div className="rounded-lg bg-black/20 p-2.5"><p className="text-[10px] text-slate-500">Stop loss</p><p className="mt-1 text-xs font-medium">{trade.stop_loss ?? "—"}</p></div><div className="rounded-lg bg-black/20 p-2.5"><p className="text-[10px] text-slate-500">Realized R</p><p className={`mt-1 text-xs font-medium ${Number(trade.realized_r) > 0 ? "text-emerald-200" : Number(trade.realized_r) < 0 ? "text-rose-200" : "text-slate-200"}`}>{trade.realized_r === null ? "—" : `${Number(trade.realized_r) > 0 ? "+" : ""}${Number(trade.realized_r).toFixed(2)}R`}</p></div></div>
-            {screenshot && <img src={screenshot} alt={trade.instrument + " trade chart"} className="mt-3 max-h-64 w-full rounded-xl border border-white/10 object-contain" />}
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">{[["Trade thesis", trade.thesis], ["Fundamental", trade.fundamental_analysis], ["Intermarket", trade.intermarket_analysis]].map(([label, value]) => <div key={String(label)}><h4 className="text-[9px] font-semibold uppercase tracking-wider text-cyan-200/80">{label}</h4><p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs leading-5 text-slate-400">{value || "No notes recorded."}</p></div>)}</div>
-            <p className="mt-3 border-t border-white/[.07] pt-3 text-[10px] text-slate-600">{new Date(trade.created_at).toLocaleDateString("en-NG", { dateStyle: "medium" })}</p>
-          </article>;
-        })}</div> : <EmptyState>Your private journal is empty. Record your first trade to start building your performance history.</EmptyState>}
-      </section>
+      <JournalWorkspace trades={trades} screenshots={Object.fromEntries(imageByTrade)} />
 
       <footer className="mt-8 border-t border-white/[.07] py-5 text-center text-[10px] text-slate-600">AIS TERMINAL · INTERMARKET STRATEGIST · Journal metrics reflect records entered in your account.</footer>
       </div>
