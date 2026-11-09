@@ -50,7 +50,7 @@ export default async function DashboardPage() {
   const isAdmin = profile?.role === "admin";
   const hasPremium = Boolean(premiumAccess) || isAdmin;
 
-  const [tradeResult, journalAnalyticsResult, publicTradeResult, eventResult, researchResult] = await Promise.all([
+  const [journalAnalyticsResult, tradeResult, publicTradeResult, eventResult, researchResult] = await Promise.all([
     supabase.from("private_trades").select("id,instrument,market,direction,status,created_at,closed_at,realized_r", { count: "exact" }).order("created_at", { ascending: false }).limit(1000),
     supabase.from("private_trades").select("id,instrument,market,direction,status,created_at,entry_price,stop_loss,thesis,fundamental_analysis,intermarket_analysis,news_trade_attribution,news_event_type,news_event_name,realized_r").order("created_at", { ascending: false }).limit(30),
     supabase.from("public_trades").select("id,slug,instrument,market,direction,status,entry_price,stop_loss,thesis,published_at,created_at").eq("content_state", "published").order("published_at", { ascending: false }).limit(4),
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
   const closedTrades = analyticsTrades.filter(t => ["all_targets_hit", "stopped_out", "breakeven", "closed_manually"].includes(t.status) && t.realized_r !== null);
   const wins = closedTrades.filter(t => Number(t.realized_r) > 0).length;
   const netR = closedTrades.reduce((sum, t) => sum + Number(t.realized_r || 0), 0);
-  const winRate = closedTrades.length ? Math.round((wins / closedTrades.length) * 100) : null;
+  const winRate = wins + closedTrades.filter(t => Number(t.realized_r) < 0).length ? Math.round((wins / (wins + closedTrades.filter(t => Number(t.realized_r) < 0).length)) * 100) : null;
   const activeTrades = analyticsTrades.filter(t => t.status === "in_progress").length;
   const losses = closedTrades.filter(t => Number(t.realized_r) < 0).length;
   const breakevenTrades = closedTrades.filter(t => Number(t.realized_r) === 0).length;
