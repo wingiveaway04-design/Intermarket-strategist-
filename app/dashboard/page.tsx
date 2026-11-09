@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import NotificationBell from "@/components/notification-bell";
 import RecordDeleteButton from "@/components/record-delete-button";
 import TerminalTopNav from "./terminal-top-nav";
 
@@ -101,7 +100,7 @@ export default async function DashboardPage() {
       <TerminalTopNav isPremium={hasPremium} isAdmin={isAdmin} />
 
       <div className="mt-5 min-w-0">
-      <section id="overview" aria-label="Dashboard overview" className="mt-5 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+      <section id="overview" aria-label="Dashboard overview" className="mt-5">
         <div className="relative overflow-hidden rounded-[26px] border border-cyan-200/20 bg-[radial-gradient(ellipse_at_95%_0%,rgba(34,211,238,.15),transparent_35%),linear-gradient(125deg,#12334c_0%,#10263d_48%,#101b2d_100%)] p-6 shadow-[0_24px_65px_rgba(0,0,0,.25)] sm:p-8">
           <div className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full border border-cyan-200/10" /><div className="pointer-events-none absolute -right-2 -top-6 h-36 w-36 rounded-full border border-cyan-200/10" />
           <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-cyan-200/75">Analyst workspace</p>
@@ -109,12 +108,6 @@ export default async function DashboardPage() {
           <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">Review published event scenarios, follow official trade ideas, and keep your own execution record in one place.</p>
           <div className="mt-5 flex flex-wrap gap-2"><Link href="/news-trading" className="rounded-lg bg-cyan-200 px-4 py-2.5 text-xs font-bold text-[#082033] shadow-[0_6px_20px_rgba(34,211,238,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-100">Open Macro Desk ↗</Link><Link href="/journal/new" className="rounded-lg border border-white/15 bg-white/[.05] px-4 py-2.5 text-xs font-semibold text-slate-100 transition hover:border-cyan-100/25 hover:bg-white/[.09]">＋ Record a trade</Link></div>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[.09] pt-4 text-[9px] font-semibold uppercase tracking-[.15em] text-slate-400"><span><span className="mr-1.5 text-cyan-200">01</span> Macro context</span><span><span className="mr-1.5 text-cyan-200">02</span> Intermarket confirmation</span><span><span className="mr-1.5 text-cyan-200">03</span> Disciplined execution</span></div>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-[#101e30] p-5">
-          <PanelHeading eyebrow="Account status" title="Membership & access" />
-          <div className="flex items-center justify-between rounded-xl border border-white/[.07] bg-[#0b1728] p-4"><div><p className="text-sm font-semibold">{hasPremium ? "Premium access enabled" : "Standard account"}</p><p className="mt-1 text-xs text-slate-500">{hasPremium ? "Premium research and member areas are unlocked." : "Free research is available on your account."}</p></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${hasPremium ? "bg-emerald-300/10 text-emerald-200" : "bg-slate-500/15 text-slate-300"}`}>{hasPremium ? "ACTIVE" : "FREE"}</span></div>
-          {!hasPremium && <Link href="/pricing" className="mt-3 block rounded-lg border border-amber-200/15 bg-amber-200/[.05] px-4 py-3 text-xs font-medium text-amber-100 hover:bg-amber-200/[.08]">Explore Premium membership and unlock the full research desk ↗</Link>}
-          <div className="mt-4 grid grid-cols-2 gap-2"><Link href="/profile" className="rounded-lg border border-white/[.07] p-3 text-xs text-slate-300 hover:border-cyan-200/20">Public profile ↗</Link><Link href="/notifications" className="rounded-lg border border-white/[.07] p-3 text-xs text-slate-300 hover:border-cyan-200/20">Notifications ↗</Link></div>
         </div>
       </section>
 
@@ -165,24 +158,6 @@ export default async function DashboardPage() {
         <PanelHeading eyebrow="Analyst calls" title="Recent public trade ideas" href="/setups" linkText="Browse all ideas" />
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {publicCalls.length ? publicCalls.map(call => <Link key={call.id} href="/setups" className="group rounded-2xl border border-white/10 bg-[#101e30] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200/25 hover:bg-[#12243a]"><div className="flex items-center justify-between gap-2"><span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{call.market.replaceAll("_", " ")}</span><span className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase ${call.direction === "long" ? "bg-emerald-300/10 text-emerald-200" : "bg-rose-300/10 text-rose-200"}`}>{call.direction}</span></div><h3 className="mt-3 text-xl font-semibold tracking-tight text-slate-50">{call.instrument}</h3><p className="mt-2 line-clamp-3 min-h-[3.75rem] text-xs leading-5 text-slate-400">{call.thesis || "Open the trade idea to review the analyst thesis and levels."}</p><div className="mt-4 grid grid-cols-2 gap-2"><div className="rounded-lg border border-white/[.05] bg-black/15 p-2.5"><p className="text-[9px] uppercase tracking-wider text-slate-600">Entry</p><p className="mt-1 text-xs font-semibold text-slate-200">{call.entry_price ?? "Not specified"}</p></div><div className="rounded-lg border border-white/[.05] bg-black/15 p-2.5"><p className="text-[9px] uppercase tracking-wider text-slate-600">Stop loss</p><p className="mt-1 text-xs font-semibold text-slate-200">{call.stop_loss ?? "Not specified"}</p></div></div><div className="mt-3 flex items-center justify-between border-t border-white/[.07] pt-3 text-[10px]"><span className="capitalize text-slate-500">{call.status.replaceAll("_", " ")}</span><span className="font-semibold text-cyan-200 transition group-hover:text-cyan-100">Review call ↗</span></div></Link>) : <div className="sm:col-span-2 xl:col-span-4"><EmptyState>No public trade ideas are currently published.</EmptyState></div>}
-        </div>
-      </section>
-
-      <section className="mt-7">
-        <PanelHeading eyebrow="Terminal navigation" title="Trading & research tools" />
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          <QuickLink href="/journal/new" icon="＋" title="Record a trade" description="Log your entry, thesis, risk and execution." />
-          <QuickLink href="/barometer" icon="◉" title="News Trading Barometer" description="Review your news-trading win rate, profit factor and realized R." />
-          <QuickLink href="/setups" icon="↗" title="Public trade ideas" description="Follow official analyst calls and trade updates." />
-          <QuickLink href="/analysis" icon="▥" title="Research library" description="Browse published macro and intermarket analysis." />
-          <QuickLink href="/news-trading" icon="◈" title="News & Macro Desk" description="Review economic-event scenarios and macro outlooks." />
-          <QuickLink href="/macro-radar" icon="◷" title="Macro Event Radar" description="Track upcoming releases, impact levels and actual-versus-consensus data." />
-          <QuickLink href={hasPremium ? "/lounge" : "/pricing"} icon="☏" title="Community room" description={hasPremium ? "Join the shared Premium analyst–member discussion." : "Unlock the private member community."} locked={!hasPremium} />
-          <QuickLink href={hasPremium ? "/messages" : "/pricing"} icon="✉" title="Private messages" description={hasPremium ? "Open your dedicated private inbox and message members directly." : "Unlock private member messaging."} locked={!hasPremium} />
-          <QuickLink href={hasPremium || isAdmin ? "/sessions#live-sessions" : "/pricing"} icon="●" title="Live sessions" description="See upcoming briefings and join live analyst rooms." locked={!hasPremium && !isAdmin} />
-          <QuickLink href={hasPremium || isAdmin ? "/sessions#session-library" : "/pricing"} icon="▶" title="Video library" description="Revisit recorded briefings and market breakdowns." locked={!hasPremium && !isAdmin} />
-          <QuickLink href="/pricing" icon="✦" title="Membership plans" description="Review membership options and access." />
-          {isAdmin && <QuickLink href="/admin" icon="▣" title="Admin workspace" description="Publish trade calls, research and platform updates." />}
         </div>
       </section>
 
