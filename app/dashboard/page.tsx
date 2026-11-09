@@ -91,7 +91,11 @@ export default async function DashboardPage() {
         <div className="flex items-center gap-2"><NotificationBell /><Link href="/settings" className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5">Settings</Link><form action="/auth/signout" method="post"><button className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5">Sign out</button></form></div>
       </header>
 
-      <section className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <nav aria-label="Terminal sections" className="mt-3 flex gap-2 overflow-x-auto rounded-xl border border-white/[.08] bg-[#0d1a2b] p-2 text-xs whitespace-nowrap">
+        {[["Overview","#overview"],["Live sessions","/sessions#live-sessions"],["Video library","/sessions#session-library"],["News & Macro","/news-trading"],["Trade ideas","/setups"],["Research","/analysis"],["Community","/lounge"],["My journal","#journal"]].map(([label,href]) => <Link key={label} href={href} className="rounded-lg px-3 py-2 text-slate-300 transition hover:bg-cyan-200/10 hover:text-cyan-100">{label}</Link>)}
+      </nav>
+
+      <section id="overview" className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Metric label="Journal records" value={String(trades.length)} detail="Your private trade history" accent="cyan" />
         <Metric label="Active positions" value={String(activeTrades)} detail="Trades marked in progress" accent="blue" />
         <Metric label="Journal win rate" value={winRate === null ? "—" : `${winRate}%`} detail={closedTrades.length ? `Based on ${closedTrades.length} closed records with R results` : "Add closed-trade results to calculate"} accent="green" />
@@ -143,14 +147,16 @@ export default async function DashboardPage() {
           <QuickLink href="/setups" icon="↗" title="Public trade ideas" description="Follow official analyst calls and trade updates." />
           <QuickLink href="/analysis" icon="▥" title="Research library" description="Browse published macro and intermarket analysis." />
           <QuickLink href="/news-trading" icon="◈" title="News & Macro Desk" description="Review economic-event scenarios and macro outlooks." />
-          <QuickLink href={hasPremium ? "/lounge" : "/pricing"} icon="☏" title="Premium Lounge" description={hasPremium ? "Join member discussions and private messages." : "Unlock member discussions and direct messages."} locked={!hasPremium} />
-          <QuickLink href={hasPremium || isAdmin ? "/sessions" : "/pricing"} icon="▶" title="Live & recorded sessions" description="Join briefings and access the session library." locked={!hasPremium && !isAdmin} />
+          <QuickLink href={hasPremium ? "/lounge" : "/pricing"} icon="☏" title="Community room" description={hasPremium ? "Join the shared Premium analyst–member discussion." : "Unlock the private member community."} locked={!hasPremium} />
+          <QuickLink href={hasPremium ? "/lounge" : "/pricing"} icon="✉" title="Private messages" description={hasPremium ? "Open the Lounge and select DMs to message members privately." : "Unlock private member messaging."} locked={!hasPremium} />
+          <QuickLink href={hasPremium || isAdmin ? "/sessions#live-sessions" : "/pricing"} icon="●" title="Live sessions" description="See upcoming briefings and join live analyst rooms." locked={!hasPremium && !isAdmin} />
+          <QuickLink href={hasPremium || isAdmin ? "/sessions#session-library" : "/pricing"} icon="▶" title="Video library" description="Revisit recorded briefings and market breakdowns." locked={!hasPremium && !isAdmin} />
           <QuickLink href="/pricing" icon="✦" title="Membership plans" description="Review membership options and access." />
           {isAdmin && <QuickLink href="/admin" icon="▣" title="Admin workspace" description="Publish trade calls, research and platform updates." />}
         </div>
       </section>
 
-      <section className="mt-8">
+      <section id="journal" className="mt-8">
         <PanelHeading eyebrow="Personal trading journal" title="Recent journal activity" href="/journal/new" linkText="＋ Add trade" />
         {tradeResult.error ? <EmptyState>Your journal could not be loaded. Please refresh and try again.</EmptyState> : trades.length ? <div className="grid gap-3 xl:grid-cols-2">{trades.slice(0, 6).map(trade => {
           const screenshot = imageByTrade.get(trade.id);
