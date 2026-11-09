@@ -112,14 +112,7 @@ export default async function DashboardPage() {
           </div>
         </aside>
         <div className="min-w-0">
-      <section id="overview" className="mt-5 grid grid-cols-2 gap-3.5 xl:grid-cols-4">
-        <Metric label="Journal records" value={String(trades.length)} detail="Your private trade history" accent="cyan" />
-        <Metric label="Active positions" value={String(activeTrades)} detail="Trades marked in progress" accent="blue" />
-        <Metric label="Journal win rate" value={winRate === null ? "—" : `${winRate}%`} detail={closedTrades.length ? `Based on ${closedTrades.length} closed records with R results` : "Add closed-trade results to calculate"} accent="green" />
-        <Metric label="Net realized R" value={closedTrades.length ? `${netR > 0 ? "+" : ""}${netR.toFixed(2)}R` : "—"} detail="Sum of recorded realized R" accent="amber" />
-      </section>
-
-      <section className="mt-5 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+      <section id="overview" aria-label="Dashboard overview" className="mt-5 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <div className="relative overflow-hidden rounded-[26px] border border-cyan-200/20 bg-[radial-gradient(ellipse_at_95%_0%,rgba(34,211,238,.15),transparent_35%),linear-gradient(125deg,#12334c_0%,#10263d_48%,#101b2d_100%)] p-6 shadow-[0_24px_65px_rgba(0,0,0,.25)] sm:p-8">
           <div className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full border border-cyan-200/10" /><div className="pointer-events-none absolute -right-2 -top-6 h-36 w-36 rounded-full border border-cyan-200/10" />
           <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-cyan-200/75">Analyst workspace</p>
@@ -134,6 +127,13 @@ export default async function DashboardPage() {
           {!hasPremium && <Link href="/pricing" className="mt-3 block rounded-lg border border-amber-200/15 bg-amber-200/[.05] px-4 py-3 text-xs font-medium text-amber-100 hover:bg-amber-200/[.08]">Explore Premium membership and unlock the full research desk ↗</Link>}
           <div className="mt-4 grid grid-cols-2 gap-2"><Link href="/profile" className="rounded-lg border border-white/[.07] p-3 text-xs text-slate-300 hover:border-cyan-200/20">Public profile ↗</Link><Link href="/notifications" className="rounded-lg border border-white/[.07] p-3 text-xs text-slate-300 hover:border-cyan-200/20">Notifications ↗</Link></div>
         </div>
+      </section>
+
+\n      <section aria-label="Recent trading performance" className="mt-5">\n        <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Performance snapshot</p><h2 className="mt-1 text-base font-semibold text-slate-100">Your recent activity</h2></div><p className="text-[10px] text-slate-500">Based on your latest 30 journal records</p></div>\n        <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+        <Metric label="Recent records" value={String(trades.length)} detail="Latest records in your private journal" accent="cyan" />
+        <Metric label="Active in recent records" value={String(activeTrades)} detail="Marked in progress in this recent sample" accent="blue" />
+        <Metric label="Recent win rate" value={winRate === null ? "—" : `${winRate}%`} detail={closedTrades.length ? `From ${closedTrades.length} recent closed records with R results` : "Add closed-trade results to calculate"} accent="green" />
+        <Metric label="Net realized R" value={closedTrades.length ? `${netR > 0 ? "+" : ""}${netR.toFixed(2)}R` : "—"} detail="Combined realized R in this recent sample" accent="amber" />
       </section>
 
       <section className="mt-7">
