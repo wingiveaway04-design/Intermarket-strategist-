@@ -144,9 +144,9 @@ export default async function DashboardPage() {
 
 
       <section aria-label="Recent trading performance" className="mt-5">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Performance snapshot</p><h2 className="mt-1 text-base font-semibold text-slate-100">Your recent activity</h2></div><p className="text-[10px] text-slate-500">Based on your latest 30 journal records</p></div>
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Performance snapshot</p><h2 className="mt-1 text-base font-semibold text-slate-100">Your recent activity</h2></div><p className="text-[10px] text-slate-500">Based on your latest 1,000 journal records at most</p></div>
         <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
-        <Metric label="Recent records" value={String(trades.length)} detail="Latest records in your private journal" accent="cyan" />
+        <Metric label="Recent records" value={String(analyticsTrades.length)} detail="Latest records loaded from your private journal" accent="cyan" />
         <Metric label="Active in recent records" value={String(activeTrades)} detail="Marked in progress in this recent sample" accent="blue" />
         <Metric label="Recent win rate" value={winRate === null ? "—" : `${winRate}%`} detail={closedTrades.length ? `From ${closedTrades.length} recent closed records with R results` : "Add closed-trade results to calculate"} accent="green" />
         <Metric label="Net realized R" value={closedTrades.length ? `${netR > 0 ? "+" : ""}${netR.toFixed(2)}R` : "—"} detail="Combined realized R in this recent sample" accent="amber" />
