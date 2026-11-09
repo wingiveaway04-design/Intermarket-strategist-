@@ -91,10 +91,24 @@ export default async function DashboardPage() {
         <div className="flex items-center gap-2"><NotificationBell /><Link href="/settings" className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5">Settings</Link><form action="/auth/signout" method="post"><button className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5">Sign out</button></form></div>
       </header>
 
-      <nav aria-label="Terminal sections" className="mt-3 flex gap-2 overflow-x-auto rounded-xl border border-white/[.08] bg-[#0d1a2b] p-2 text-xs whitespace-nowrap">
+      <nav aria-label="Terminal sections" className="mt-3 flex gap-1.5 overflow-x-auto rounded-xl border border-white/[.08] bg-[#0d1a2b] p-2 text-[11px] whitespace-nowrap lg:hidden">
         {[["Overview","#overview"],["Live sessions","/sessions#live-sessions"],["Video library","/sessions#session-library"],["News & Macro","/news-trading"],["Trade ideas","/setups"],["Research","/analysis"],["COT reports","/cot-reports"],["Community","/lounge"],["Private messages","/messages"],["My journal","#journal"]].map(([label,href]) => <Link key={label} href={href} className="rounded-lg px-3 py-2 text-slate-300 transition hover:bg-cyan-200/10 hover:text-cyan-100">{label}</Link>)}
       </nav>
 
+      <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <aside className="hidden lg:block">
+          <div className="sticky top-4 rounded-2xl border border-white/[.08] bg-[#0d1a2b]/95 p-3">
+            <p className="px-3 pb-3 pt-2 text-[9px] font-bold uppercase tracking-[.2em] text-slate-500">Terminal workspace</p>
+            <div className="space-y-1">
+              {[["⌂","Overview","#overview"],["◷","Live sessions","/sessions#live-sessions"],["▶","Video library","/sessions#session-library"],["◈","News & Macro","/news-trading"],["↗","Trade ideas","/setups"],["▤","Research library","/analysis"],["▥","COT reports","/cot-reports"],["◎","Community room","/lounge"],["✉","Private messages","/messages"],["▣","My journal","#journal"]].map(([icon,label,href], index) => <Link key={label} href={href} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition ${index === 0 ? "border border-cyan-200/15 bg-cyan-200/[.08] text-cyan-100" : "text-slate-400 hover:bg-white/[.04] hover:text-slate-100"}`}><span className="w-4 text-center text-sm">{icon}</span>{label}</Link>)}
+            </div>
+            <div className="mt-5 rounded-xl border border-cyan-200/10 bg-cyan-200/[.04] p-3">
+              <p className="text-[9px] font-semibold uppercase tracking-[.16em] text-cyan-200/70">Analyst principle</p>
+              <p className="mt-2 text-[11px] leading-5 text-slate-400">Macro context. Intermarket confirmation. Disciplined execution.</p>
+            </div>
+          </div>
+        </aside>
+        <div className="min-w-0">
       <section id="overview" className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Metric label="Journal records" value={String(trades.length)} detail="Your private trade history" accent="cyan" />
         <Metric label="Active positions" value={String(activeTrades)} detail="Trades marked in progress" accent="blue" />
@@ -171,6 +185,8 @@ export default async function DashboardPage() {
       </section>
 
       <footer className="mt-8 border-t border-white/[.07] py-5 text-center text-[10px] text-slate-600">AIS TERMINAL · INTERMARKET STRATEGIST · Journal metrics reflect records entered in your account.</footer>
+        </div>
+      </div>
     </div>
   </main>;
 }
