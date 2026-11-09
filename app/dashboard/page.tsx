@@ -51,7 +51,7 @@ export default async function DashboardPage() {
   const [tradeResult, publicTradeResult, eventResult, researchResult] = await Promise.all([
     supabase.from("private_trades").select("id,instrument,market,direction,status,created_at,entry_price,stop_loss,thesis,fundamental_analysis,intermarket_analysis,news_trade_attribution,news_event_type,news_event_name,realized_r").order("created_at", { ascending: false }).limit(30),
     supabase.from("public_trades").select("id,slug,instrument,market,direction,status,entry_price,stop_loss,thesis,published_at,created_at").eq("content_state", "published").order("published_at", { ascending: false }).limit(4),
-    supabase.from("news_setups").select("id,title,event_type,event_name,release_at,phase,trade_bias,access_level,research_category,published_at").eq("publication_status", "published").in("access_level", hasPremium ? ["free", "premium"] : ["free"]).order("published_at", { ascending: false }).limit(4),
+    supabase.from("news_setups").select("id,title,event_type,event_name,release_at,phase,trade_bias,access_level,research_category,market_focus,published_at").eq("publication_status", "published").in("access_level", hasPremium ? ["free", "premium"] : ["free"]).order("published_at", { ascending: false }).limit(4),
     (() => {
       let query = supabase.from("analysis_articles").select("id,slug,title,excerpt,category,is_premium_only,published_at").eq("content_state", "published");
       if (!hasPremium) query = query.eq("is_premium_only", false);
@@ -79,6 +79,11 @@ export default async function DashboardPage() {
   const events = eventResult.data ?? [];
   const research = researchResult.data ?? [];
   const publicCalls = publicTradeResult.data ?? [];
+  const upcomingEvents = events
+    .filter(event => event.release_at && new Date(event.release_at).getTime() >= Date.now())
+    .sort((a, b) => new Date(a.release_at!).getTime() - new Date(b.release_at!).getTime());
+  const nextEvent = upcomingEvents[0] ?? null;
+  const marketFocus = [...new Set(events.flatMap(event => event.market_focus ?? []))].slice(0, 6);
 
   return <main className="min-h-screen bg-[#081321] px-3 py-4 text-slate-100 sm:px-5 sm:py-6 lg:px-8">
     <div className="mx-auto max-w-[1440px]">
@@ -94,6 +99,34 @@ export default async function DashboardPage() {
       <nav aria-label="Terminal sections" className="mt-3 flex gap-2 overflow-x-auto rounded-xl border border-white/[.08] bg-[#0d1a2b] p-2 text-xs whitespace-nowrap">
         {[["Overview","#overview"],["Live sessions","/sessions#live-sessions"],["Video library","/sessions#session-library"],["News & Macro","/news-trading"],["Trade ideas","/setups"],["Research","/analysis"],["Community","/lounge"],["Private messages","/messages"],["My journal","#journal"]].map(([label,href]) => <Link key={label} href={href} className="rounded-lg px-3 py-2 text-slate-300 transition hover:bg-cyan-200/10 hover:text-cyan-100">{label}</Link>)}
       </nav>
+
+      <section className="mt-5">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Macro & intermarket intelligence</p><h2 className="mt-1 text-xl font-semibold text-slate-100">Market overview</h2><p className="mt-1 text-xs text-slate-500">A live view of your published research coverage and upcoming event scenarios.</p></div>
+          <Link href="/news-trading" className="text-xs font-medium text-cyan-200 hover:text-cyan-100">Open Macro Desk ↗</Link>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr_1fr]">
+          <div className="rounded-2xl border border-cyan-200/15 bg-gradient-to-br from-[#112b43] to-[#101e30] p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-cyan-200/75">Economic event radar</p><span className="rounded-full bg-cyan-200/10 px-2 py-1 text-[9px] font-semibold text-cyan-100">{nextEvent ? "UPCOMING" : "NO UPCOMING OUTLOOK"}</span></div>
+            {nextEvent ? <><h3 className="mt-3 text-lg font-semibold text-slate-50">{nextEvent.title}</h3><p className="mt-1 text-xs text-slate-400">{nextEvent.event_name} · {nextEvent.event_type.replaceAll("_", " ")}</p><p className="mt-3 text-sm font-medium text-cyan-100">{new Date(nextEvent.release_at!).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })}</p><p className="mt-2 text-[11px] text-slate-500">Published scenario · {nextEvent.trade_bias}</p></> : <><h3 className="mt-3 text-lg font-semibold text-slate-50">{events[0]?.title || "No event outlook published yet"}</h3><p className="mt-1 text-xs leading-5 text-slate-400">{events[0] ? "This is the latest published event scenario. No future release is currently listed in the outlooks available to your account." : "Published economic-event scenarios will appear here when available."}</p></>}
+            <Link href="/news-trading" className="mt-4 inline-flex text-xs font-semibold text-cyan-200">Review event scenarios ↗</Link>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-[#101e30] p-4 sm:p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-violet-200/75">Research pulse</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-50">{research.length}</p>
+            <p className="mt-1 text-xs text-slate-500">Research notes available to your account</p>
+            {research[0] ? <><p className="mt-4 line-clamp-2 text-sm font-medium text-slate-200">{research[0].title}</p><p className="mt-1 text-[11px] text-slate-500">Latest published analysis</p></> : <p className="mt-4 text-xs text-slate-500">New analyst publications will appear here.</p>}
+            <Link href="/analysis" className="mt-4 inline-flex text-xs font-semibold text-cyan-200">Open research library ↗</Link>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-[#101e30] p-4 sm:p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-emerald-200/75">Market coverage</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-50">{marketFocus.length}</p>
+            <p className="mt-1 text-xs text-slate-500">Markets referenced in available event outlooks</p>
+            <div className="mt-4 flex flex-wrap gap-2">{marketFocus.length ? marketFocus.map(market => <span key={market} className="rounded-lg border border-white/[.08] bg-black/15 px-2.5 py-1.5 text-[11px] text-slate-300">{market}</span>) : <span className="text-xs text-slate-500">Market tags will appear when event outlooks are published.</span>}</div>
+            <p className="mt-4 border-t border-white/[.07] pt-3 text-[10px] leading-4 text-amber-100/70">Live prices and bond yields are not connected yet. No placeholder quotes are displayed.</p>
+          </div>
+        </div>
+      </section>
 
       <section id="overview" className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Metric label="Journal records" value={String(trades.length)} detail="Your private trade history" accent="cyan" />
