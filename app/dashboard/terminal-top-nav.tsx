@@ -9,7 +9,7 @@ const sections = [
     title: "Workspace",
     items: [
       ["Overview", "#overview", "Your terminal home and performance snapshot"],
-      ["My Journal", "#journal", "Your private trading journal and analytics"],
+      ["My Trading Journal", "/journal", "Your private records, analytics and trading calendar"],
       ["Trade Ideas", "/setups", "Published trade calls and active setups"],
     ],
   },
