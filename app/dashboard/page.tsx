@@ -279,8 +279,65 @@ export default async function DashboardPage() {
 
       <section className="mt-9">
         <PanelHeading eyebrow="Analyst calls" title="Recent public trade ideas" href="/setups" linkText="Browse all ideas" />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {publicCalls.length ? publicCalls.map(call => <Link key={call.id} href="/setups" className="group rounded-2xl border border-white/10 bg-[#101e30] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200/25 hover:bg-[#12243a]"><div className="flex items-center justify-between gap-2"><span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{call.market.replaceAll("_", " ")}</span><span className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase ${call.direction === "long" ? "bg-emerald-300/10 text-emerald-200" : "bg-rose-300/10 text-rose-200"}`}>{call.direction}</span></div><h3 className="mt-3 text-xl font-semibold tracking-tight text-slate-50">{call.instrument}</h3><p className="mt-2 line-clamp-3 min-h-[3.75rem] text-xs leading-5 text-slate-400">{call.thesis || "Open the trade idea to review the analyst thesis and levels."}</p><div className="mt-4 grid grid-cols-2 gap-2"><div className="rounded-lg border border-white/[.05] bg-black/15 p-2.5"><p className="text-[9px] uppercase tracking-wider text-slate-600">Entry</p><p className="mt-1 text-xs font-semibold text-slate-200">{call.entry_price ?? "Not specified"}</p></div><div className="rounded-lg border border-white/[.05] bg-black/15 p-2.5"><p className="text-[9px] uppercase tracking-wider text-slate-600">Stop loss</p><p className="mt-1 text-xs font-semibold text-slate-200">{call.stop_loss ?? "Not specified"}</p></div></div><div className="mt-3 flex items-center justify-between border-t border-white/[.07] pt-3 text-[10px]"><span className="capitalize text-slate-500">{call.status.replaceAll("_", " ")}</span><span className="font-semibold text-cyan-200 transition group-hover:text-cyan-100">Review call ↗</span></div></Link>) : <div className="sm:col-span-2 xl:col-span-4"><EmptyState>No public trade ideas are currently published.</EmptyState></div>}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/[.07] bg-[#0b192a] px-3.5 py-3">
+          <div>
+            <p className="text-xs font-semibold text-slate-200">Published analyst calls</p>
+            <p className="mt-1 text-[10px] text-slate-500">Public trade ideas shared by the analyst. Your private journal remains separate.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-white/[.08] bg-white/[.035] px-2.5 py-1.5 text-[10px] font-semibold text-slate-300">{publicCalls.length} recent</span>
+            <span className="rounded-full border border-cyan-200/15 bg-cyan-200/[.06] px-2.5 py-1.5 text-[10px] font-semibold text-cyan-100">{publicCalls.filter(call => call.status === "in_progress").length} in progress</span>
+          </div>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-2">
+          {publicCalls.length ? publicCalls.map(call => {
+            const status = (call.status || "in_progress").toLowerCase();
+            const direction = (call.direction || "").toLowerCase();
+            const statusLabel = status.replaceAll("_", " ");
+            const statusTone = status === "in_progress"
+              ? "border-cyan-200/15 bg-cyan-200/[.07] text-cyan-100"
+              : status === "all_targets_hit"
+                ? "border-emerald-200/15 bg-emerald-200/[.07] text-emerald-100"
+                : status === "stopped_out"
+                  ? "border-rose-200/15 bg-rose-200/[.07] text-rose-100"
+                  : "border-white/10 bg-white/[.04] text-slate-300";
+            const publishedDate = call.published_at || call.created_at;
+            return <Link key={call.id} href="/setups" className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/[.08] bg-[linear-gradient(145deg,#12243a,#0b192a)] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200/25 hover:shadow-[0_16px_38px_rgba(0,0,0,.2)] sm:p-5">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/35 to-transparent opacity-70" />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <span className="rounded-md border border-white/[.08] bg-white/[.035] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-slate-400">{(call.market || "market").replaceAll("_", " ")}</span>
+                  <span className={`rounded-md border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider ${statusTone}`}>{statusLabel}</span>
+                </div>
+                <span className="text-[10px] text-slate-500">{publishedDate ? new Date(publishedDate).toLocaleDateString("en-NG", { dateStyle: "medium" }) : "Publication date unavailable"}</span>
+              </div>
+              <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[9px] font-semibold uppercase tracking-[.16em] text-slate-500">Instrument</p>
+                  <h3 className="mt-1 break-words text-xl font-semibold tracking-tight text-slate-50 transition group-hover:text-cyan-100">{call.instrument}</h3>
+                </div>
+                <span className={`shrink-0 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${direction === "long" ? "bg-emerald-300/10 text-emerald-200" : direction === "short" ? "bg-rose-300/10 text-rose-200" : "bg-white/[.06] text-slate-300"}`}>{direction || "direction not set"}</span>
+              </div>
+              <div className="mt-4 rounded-xl border border-white/[.06] bg-[#081525]/70 p-3.5">
+                <p className="text-[9px] font-semibold uppercase tracking-[.14em] text-cyan-200/70">Analyst thesis</p>
+                <p className="mt-1.5 line-clamp-3 min-h-[3.75rem] text-xs leading-5 text-slate-300">{call.thesis || "Open this published idea to review the analyst's full reasoning."}</p>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-white/[.06] bg-white/[.025] p-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-500">Entry level</p>
+                  <p className="mt-1.5 break-words text-sm font-semibold tabular-nums text-slate-100">{call.entry_price ?? "Not specified"}</p>
+                </div>
+                <div className="rounded-xl border border-rose-200/[.08] bg-rose-200/[.025] p-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-rose-200/60">Stop loss</p>
+                  <p className="mt-1.5 break-words text-sm font-semibold tabular-nums text-slate-100">{call.stop_loss ?? "Not specified"}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-white/[.07] pt-3">
+                <span className="text-[10px] text-slate-500">Public analyst call</span>
+                <span className="text-[10px] font-semibold text-cyan-200 transition group-hover:translate-x-0.5 group-hover:text-cyan-100">Review trade idea ↗</span>
+              </div>
+            </Link>;
+          }) : <div className="lg:col-span-2"><EmptyState>No public trade ideas are currently published.</EmptyState></div>}
         </div>
       </section>
 
