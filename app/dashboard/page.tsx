@@ -59,6 +59,9 @@ export default async function DashboardPage() {
   ]);
 
   const analyticsTrades = journalAnalyticsResult.data ?? [];
+  const closedScoredTrades = analyticsTrades.filter(t => ["all_targets_hit", "stopped_out", "breakeven", "closed_manually"].includes(t.status || "") && t.realized_r !== null);
+  const activeTrades = analyticsTrades.filter(t => t.status === "in_progress").length;
+  const netR = closedScoredTrades.reduce((sum, t) => sum + Number(t.realized_r || 0), 0);
   const displayName = profile?.display_name || profile?.username || user.email?.split("@")[0] || "Trader";
   const events = eventResult.data ?? [];
   const research = researchResult.data ?? [];
@@ -152,7 +155,7 @@ export default async function DashboardPage() {
           <Metric label="Journal records" value={String(analyticsTrades.length)} detail="Records included in this snapshot" accent="cyan" />
           <Metric label="Open trades" value={String(activeTrades)} detail="Currently marked in progress" accent="blue" />
           <Metric label="Markets tracked" value={String(new Set(analyticsTrades.map(t => t.market).filter(Boolean)).size)} detail="Distinct market categories in this sample" accent="green" />
-          <Metric label="Net realized R" value={closedTrades.length ? `${netR > 0 ? "+" : ""}${netR.toFixed(2)}R` : "—"} detail="Closed trades with a recorded realized R" accent="amber" />
+          <Metric label="Net realized R" value={closedScoredTrades.length ? `${netR > 0 ? "+" : ""}${netR.toFixed(2)}R` : "—"} detail="Closed trades with a recorded realized R" accent="amber" />
         </div>
       </section>
 
