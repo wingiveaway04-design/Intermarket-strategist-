@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import PremiumBadge from "@/components/premium-badge";
 import NotificationBell from "@/components/notification-bell";
 import RecordDeleteButton from "@/components/record-delete-button";
-import TerminalMobileNav from "./terminal-mobile-nav";
+import TerminalTopNav from "./terminal-top-nav";
 
 function Metric({ label, value, detail, accent = "cyan" }: { label: string; value: string; detail: string; accent?: "cyan" | "blue" | "green" | "amber" }) {
   const tones = {
@@ -99,32 +99,9 @@ export default async function DashboardPage() {
   return <main className="relative min-h-screen overflow-hidden bg-[#07111f] px-3 py-4 text-slate-100 sm:px-5 sm:py-6 lg:px-8">
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_12%_0%,rgba(34,211,238,.09),transparent_34%),radial-gradient(ellipse_at_90%_18%,rgba(59,130,246,.07),transparent_30%)]" />
     <div className="relative z-10 mx-auto max-w-[1480px]">
-      <header className="relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-[26px] border border-cyan-100/[.13] bg-[linear-gradient(112deg,#102b42_0%,#102237_48%,#0c192a_100%)] px-5 py-6 shadow-[0_24px_70px_rgba(0,0,0,.28)] sm:px-7 sm:py-7">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 h-64 w-64 rounded-full border border-cyan-100/[.07] shadow-[0_0_0_28px_rgba(255,255,255,.012),0_0_0_58px_rgba(255,255,255,.01)]" />
-        <div className="min-w-0">
-          <Link href="/" className="text-[10px] font-bold tracking-[.22em] text-cyan-200">INTERMARKET STRATEGIST</Link>
-          <div className="mt-2 flex flex-wrap items-center gap-2"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">AIS Terminal</h1>{hasPremium && <PremiumBadge />}</div>
-          <p className="mt-1 text-xs text-slate-400 sm:text-sm">Good to see you, {displayName}. Your research and trading workspace.</p>
-        </div>
-        <div className="flex items-center gap-2"><NotificationBell /><Link href="/settings" className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5">Settings</Link><form action="/auth/signout" method="post"><button className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5">Sign out</button></form></div>
-      </header>
+      <TerminalTopNav isPremium={hasPremium} isAdmin={isAdmin} />
 
-      <TerminalMobileNav />
-
-      <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[232px_minmax(0,1fr)]">
-        <aside className="hidden lg:block">
-          <div className="sticky top-4 rounded-[22px] border border-white/[.09] bg-[#0a1727]/95 p-3.5 shadow-[0_22px_55px_rgba(0,0,0,.28)] backdrop-blur-xl">
-            <div className="mb-3 flex items-center gap-2 px-3 pb-3 pt-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-200/20 bg-cyan-200/[.08] text-[10px] font-black text-cyan-100">AIS</span><div><p className="text-[9px] font-bold uppercase tracking-[.18em] text-slate-300">Terminal workspace</p><p className="mt-0.5 text-[9px] text-slate-600">Research · Execution · Review</p></div></div>
-            <div className="space-y-1">
-              {[["⌂","Overview","#overview"],["◷","Live sessions","/sessions#live-sessions"],["▶","Video library","/sessions#session-library"],["◈","News & Macro","/news-trading"],["◷","Macro Event Radar","/macro-radar"],["↗","Trade ideas","/setups"],["▤","Research library","/analysis"],["▥","COT reports","/cot-reports"],["◎","Community room","/lounge"],["✉","Private messages","/messages"],["▣","My journal","#journal"]].map(([icon,label,href], index) => <Link key={label} href={href} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition ${index === 0 ? "border border-cyan-200/15 bg-cyan-200/[.08] text-cyan-100" : "text-slate-400 hover:bg-white/[.04] hover:text-slate-100"}`}><span className="w-4 text-center text-sm">{icon}</span>{label}</Link>)}
-            </div>
-            <div className="mt-5 rounded-xl border border-cyan-200/10 bg-cyan-200/[.04] p-3">
-              <p className="text-[9px] font-semibold uppercase tracking-[.16em] text-cyan-200/70">Analyst principle</p>
-              <p className="mt-2 text-[11px] leading-5 text-slate-400">Macro context. Intermarket confirmation. Disciplined execution.</p>
-            </div>
-          </div>
-        </aside>
-        <div className="min-w-0">
+      <div className="mt-5 min-w-0">
       <section id="overview" aria-label="Dashboard overview" className="mt-5 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <div className="relative overflow-hidden rounded-[26px] border border-cyan-200/20 bg-[radial-gradient(ellipse_at_95%_0%,rgba(34,211,238,.15),transparent_35%),linear-gradient(125deg,#12334c_0%,#10263d_48%,#101b2d_100%)] p-6 shadow-[0_24px_65px_rgba(0,0,0,.25)] sm:p-8">
           <div className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full border border-cyan-200/10" /><div className="pointer-events-none absolute -right-2 -top-6 h-36 w-36 rounded-full border border-cyan-200/10" />
@@ -225,7 +202,6 @@ export default async function DashboardPage() {
       </section>
 
       <footer className="mt-8 border-t border-white/[.07] py-5 text-center text-[10px] text-slate-600">AIS TERMINAL · INTERMARKET STRATEGIST · Journal metrics reflect records entered in your account.</footer>
-        </div>
       </div>
     </div>
   </main>;
