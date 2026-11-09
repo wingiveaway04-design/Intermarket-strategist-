@@ -51,7 +51,7 @@ let ext=upload.name.split(".").pop()?.toLowerCase()||"";if(!upload.name.includes
    <div className="flex min-w-0 items-center gap-2.5">
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-100/20 bg-gradient-to-br from-cyan-300 to-blue-600 text-xs font-black tracking-tight text-slate-950 shadow-[0_0_20px_rgba(34,211,238,.14)]">AIS</div>
     <div className="min-w-0">
-     <div className="flex items-center gap-2"><span className="text-[9px] font-bold uppercase tracking-[.18em] text-cyan-300">AIS Community</span><span className="rounded-full border border-cyan-200/20 bg-cyan-200/[.08] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-cyan-100">Premium</span></div>
+     <div className="min-w-0"><span className="block truncate text-[9px] font-bold uppercase tracking-[.18em] text-cyan-300">AIS Community</span></div>
      <h2 className="truncate text-sm font-semibold tracking-tight text-white sm:text-base">Premium Lounge</h2>
     </div>
    </div>
