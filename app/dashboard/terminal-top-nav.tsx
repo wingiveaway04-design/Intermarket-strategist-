@@ -37,7 +37,7 @@ export default function TerminalTopNav({ isPremium, isAdmin }: { isPremium: bool
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 -mx-3 border-b border-cyan-100/10 bg-[#081525]/95 px-3 py-3 shadow-[0_14px_36px_rgba(0,0,0,.28)] backdrop-blur-xl sm:-mx-5 sm:px-5 lg:-mx-8 lg:px-8">
+    <header className="relative z-50 -mx-3 mb-4 block w-full border-b border-cyan-100/15 bg-[#081525] px-3 py-3 shadow-[0_14px_36px_rgba(0,0,0,.32)] sm:-mx-5 sm:px-5 lg:-mx-8 lg:px-8">
       <div className="mx-auto max-w-[1480px]">
         <div className="flex items-center justify-between gap-3">
           <Link href="/" className="flex min-w-0 items-center gap-3" onClick={() => setOpen(false)}>
@@ -53,7 +53,7 @@ export default function TerminalTopNav({ isPremium, isAdmin }: { isPremium: bool
             aria-expanded={open}
             aria-controls="terminal-navigation-panel"
             onClick={() => setOpen((value) => !value)}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-cyan-200/20 bg-cyan-200/[.08] px-4 py-2.5 text-xs font-semibold text-cyan-50 transition hover:border-cyan-100/40 hover:bg-cyan-200/[.13]"
+            className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border border-cyan-200/35 bg-cyan-300/[.14] px-3.5 py-2.5 text-xs font-bold text-cyan-50 shadow-[0_0_22px_rgba(34,211,238,.10)] transition hover:border-cyan-100/60 hover:bg-cyan-200/[.2] sm:px-4"
           >
             <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
               {open ? <path d="m5 5 10 10M15 5 5 15" /> : <path d="M3 5h14M3 10h14M3 15h14" />}
