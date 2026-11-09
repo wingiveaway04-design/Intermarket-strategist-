@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import RecordDeleteButton from "@/components/record-delete-button";
 import TerminalTopNav from "./terminal-top-nav";
-import JournalWorkspace from "@/components/journal-workspace";
 
 function Metric({ label, value, detail, accent = "cyan" }: { label: string; value: string; detail: string; accent?: "cyan" | "blue" | "green" | "amber" }) {
   const tones = {
@@ -49,9 +47,8 @@ export default async function DashboardPage() {
   const isAdmin = profile?.role === "admin";
   const hasPremium = Boolean(premiumAccess) || isAdmin;
 
-  const [journalAnalyticsResult, tradeResult, publicTradeResult, eventResult, researchResult] = await Promise.all([
+  const [journalAnalyticsResult, publicTradeResult, eventResult, researchResult] = await Promise.all([
     supabase.from("private_trades").select("id,instrument,market,direction,status,created_at,closed_at,realized_r", { count: "exact" }).order("created_at", { ascending: false }).limit(1000),
-    supabase.from("private_trades").select("id,instrument,market,direction,status,created_at,entry_price,stop_loss,thesis,fundamental_analysis,intermarket_analysis,news_trade_attribution,news_event_type,news_event_name,realized_r").order("created_at", { ascending: false }).limit(30),
     supabase.from("public_trades").select("id,slug,instrument,market,direction,status,entry_price,stop_loss,thesis,published_at,created_at").eq("content_state", "published").order("published_at", { ascending: false }).limit(4),
     supabase.from("news_setups").select("id,title,event_type,event_name,release_at,phase,trade_bias,access_level,research_category,market_focus,published_at").eq("publication_status", "published").in("access_level", hasPremium ? ["free", "premium"] : ["free"]).order("published_at", { ascending: false }).limit(4),
     (() => {
@@ -61,35 +58,7 @@ export default async function DashboardPage() {
     })(),
   ]);
 
-  const trades = tradeResult.data ?? [];
   const analyticsTrades = journalAnalyticsResult.data ?? [];
-  const closedTrades = analyticsTrades.filter(t => ["all_targets_hit", "stopped_out", "breakeven", "closed_manually"].includes(t.status) && t.realized_r !== null);
-  const wins = closedTrades.filter(t => Number(t.realized_r) > 0).length;
-  const netR = closedTrades.reduce((sum, t) => sum + Number(t.realized_r || 0), 0);
-  const winRate = wins + closedTrades.filter(t => Number(t.realized_r) < 0).length ? Math.round((wins / (wins + closedTrades.filter(t => Number(t.realized_r) < 0).length)) * 100) : null;
-  const activeTrades = analyticsTrades.filter(t => t.status === "in_progress").length;
-  const losses = closedTrades.filter(t => Number(t.realized_r) < 0).length;
-  const breakevenTrades = closedTrades.filter(t => Number(t.realized_r) === 0).length;
-  const grossProfitR = closedTrades.filter(t => Number(t.realized_r) > 0).reduce((sum, t) => sum + Number(t.realized_r), 0);
-  const grossLossR = Math.abs(closedTrades.filter(t => Number(t.realized_r) < 0).reduce((sum, t) => sum + Number(t.realized_r), 0));
-  const profitFactor = grossLossR > 0 ? grossProfitR / grossLossR : grossProfitR > 0 ? Infinity : null;
-  const marketPerformance = [...new Set(closedTrades.map(t => t.market || "other"))].map(market => {
-    const rows = closedTrades.filter(t => (t.market || "other") === market);
-    const marketWins = rows.filter(t => Number(t.realized_r) > 0).length;
-    const marketLosses = rows.filter(t => Number(t.realized_r) < 0).length;
-    const net = rows.reduce((sum, t) => sum + Number(t.realized_r || 0), 0);
-    return { market, count: rows.length, winRate: marketWins + marketLosses ? Math.round(marketWins / (marketWins + marketLosses) * 100) : null, net };
-  }).sort((a, b) => b.count - a.count).slice(0, 4);
-  const tradeIds = trades.map(t => t.id);
-  const { data: images } = tradeIds.length
-    ? await supabase.from("images").select("id,private_trade_id,storage_path").in("private_trade_id", tradeIds).eq("owner_id", user.id).eq("visibility", "private")
-    : { data: [] as { id: string; private_trade_id: string; storage_path: string }[] };
-  const imageByTrade = new Map<string, string>();
-  for (const image of images ?? []) {
-    const { data } = await supabase.storage.from("trade-journal").createSignedUrl(image.storage_path, 3600);
-    if (data?.signedUrl && !imageByTrade.has(image.private_trade_id)) imageByTrade.set(image.private_trade_id, data.signedUrl);
-  }
-
   const displayName = profile?.display_name || profile?.username || user.email?.split("@")[0] || "Trader";
   const events = eventResult.data ?? [];
   const research = researchResult.data ?? [];
@@ -126,7 +95,8 @@ export default async function DashboardPage() {
 
       <section aria-label="Workspace shortcuts" className="mt-7">
         <PanelHeading eyebrow="Your workspace" title="Quick access" />
-        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
+          <QuickLink href="/journal" icon="▤" title="My Trading Journal" description="Private records, performance analytics and trading calendar" />
           <QuickLink href="/macro-radar" icon="◷" title="Macro Event Radar" description="Track upcoming releases and published event scenarios" />
           <QuickLink href="/cot-reports" icon="◎" title="COT Reports" description="Review weekly positioning across key markets" />
           <QuickLink href="/sessions#live-sessions" icon="▶" title="Live Sessions" description="See scheduled analyst sessions and discussions" />
@@ -176,7 +146,7 @@ export default async function DashboardPage() {
       <section aria-label="Recent trading performance" className="mt-7 rounded-[22px] border border-white/[.07] bg-[linear-gradient(145deg,rgba(16,34,56,.78),rgba(9,21,37,.88))] p-4 shadow-[0_18px_45px_rgba(0,0,0,.16)] sm:p-5">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Performance snapshot</p><h2 className="mt-1 text-lg font-semibold text-slate-100">Trading activity at a glance</h2><p className="mt-1 text-[11px] leading-5 text-slate-500">A concise view of activity and realized outcomes recorded in your private journal.</p></div>
-          <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-white/[.08] bg-white/[.035] px-2.5 py-1.5 text-[9px] font-medium text-slate-400">Up to 1,000 latest records</span><Link href="#journal-analytics" className="rounded-lg border border-cyan-200/15 bg-cyan-200/[.05] px-3 py-1.5 text-[10px] font-semibold text-cyan-100 transition hover:border-cyan-200/30 hover:bg-cyan-200/[.09]">Full analytics ↓</Link></div>
+          <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-white/[.08] bg-white/[.035] px-2.5 py-1.5 text-[9px] font-medium text-slate-400">Up to 1,000 latest records</span><Link href="/journal" className="rounded-lg border border-cyan-200/15 bg-cyan-200/[.05] px-3 py-1.5 text-[10px] font-semibold text-cyan-100 transition hover:border-cyan-200/30 hover:bg-cyan-200/[.09]">Open journal ↗</Link></div>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:gap-3.5 xl:grid-cols-4">
           <Metric label="Journal records" value={String(analyticsTrades.length)} detail="Records included in this snapshot" accent="cyan" />
@@ -184,34 +154,6 @@ export default async function DashboardPage() {
           <Metric label="Markets tracked" value={String(new Set(analyticsTrades.map(t => t.market).filter(Boolean)).size)} detail="Distinct market categories in this sample" accent="green" />
           <Metric label="Net realized R" value={closedTrades.length ? `${netR > 0 ? "+" : ""}${netR.toFixed(2)}R` : "—"} detail="Closed trades with a recorded realized R" accent="amber" />
         </div>
-      </section>
-
-      <section id="journal-analytics" aria-label="Journal performance analytics" className="mt-7 overflow-hidden rounded-[22px] border border-cyan-200/10 bg-[linear-gradient(145deg,rgba(16,34,56,.96),rgba(9,25,42,.98))] p-4 shadow-[0_18px_45px_rgba(0,0,0,.2)] sm:p-5">
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Journal analytics</p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-100">Execution performance</h2>
-            <p className="mt-1 text-[11px] leading-5 text-slate-400">A closer look at completed trades and realized risk performance.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/[.08] bg-white/[.035] px-2.5 py-1.5 text-[9px] font-medium text-slate-400">{analyticsTrades.length.toLocaleString("en-NG")} of {Number(journalAnalyticsResult.count ?? analyticsTrades.length).toLocaleString("en-NG")} records</span>
-            <Link href="/barometer" className="rounded-lg border border-cyan-200/15 bg-cyan-200/[.05] px-3 py-1.5 text-[10px] font-semibold text-cyan-100 transition hover:border-cyan-200/30 hover:bg-cyan-200/[.09]">News-trade analytics ↗</Link>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
-          <div className="rounded-xl border border-blue-200/[.10] bg-blue-300/[.035] p-3 sm:p-3.5"><Metric label="Closed trades" value={String(closedTrades.length)} detail={wins + " wins · " + losses + " losses · " + breakevenTrades + " breakeven"} accent="blue" /></div>
-          <div className="rounded-xl border border-emerald-200/[.10] bg-emerald-300/[.035] p-3 sm:p-3.5"><Metric label="Win rate" value={winRate === null ? "—" : String(winRate) + "%"} detail="Breakeven trades excluded" accent="green" /></div>
-          <div className="rounded-xl border border-cyan-200/[.10] bg-cyan-300/[.035] p-3 sm:p-3.5"><Metric label="Profit factor" value={profitFactor === null ? "—" : Number.isFinite(profitFactor) ? profitFactor.toFixed(2) : "∞"} detail="Gross profit R ÷ gross loss R" accent="cyan" /></div>
-          <div className="rounded-xl border border-amber-200/[.10] bg-amber-300/[.035] p-3 sm:p-3.5"><Metric label="Average result" value={closedTrades.length ? ((netR / closedTrades.length) > 0 ? "+" : "") + (netR / closedTrades.length).toFixed(2) + "R" : "—"} detail="Realized R per closed trade" accent="amber" /></div>
-        </div>
-        <div className="mt-4 rounded-xl border border-white/[.07] bg-[#091525]/80 p-3.5 sm:p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div><h3 className="text-xs font-semibold text-slate-100">Performance by market</h3><p className="mt-1 text-[10px] text-slate-500">Closed trade outcomes grouped by market category</p></div>
-            <span className="rounded-full border border-white/[.07] bg-white/[.025] px-2.5 py-1 text-[9px] text-slate-500">Latest 1,000 records at most</span>
-          </div>
-          {marketPerformance.length ? <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">{marketPerformance.map(item => <div key={item.market} className="min-w-0 rounded-xl border border-white/[.07] bg-white/[.025] p-3.5"><p className="truncate text-[10px] font-semibold uppercase tracking-wider text-slate-400">{item.market.replaceAll("_", " ")}</p><div className="mt-3 flex items-end justify-between gap-2"><div><p className="text-[9px] uppercase tracking-wider text-slate-600">Closed</p><p className="mt-1 text-sm font-semibold tabular-nums text-slate-200">{item.count}</p></div><div className="text-right"><p className="text-[9px] uppercase tracking-wider text-slate-600">Net realized</p><p className={`mt-1 text-sm font-semibold tabular-nums ${item.net > 0 ? "text-emerald-200" : item.net < 0 ? "text-rose-200" : "text-slate-200"}`}>{item.net > 0 ? "+" : ""}{item.net.toFixed(2)}R</p></div></div><div className="mt-3 flex items-center justify-between border-t border-white/[.06] pt-2"><span className="text-[10px] text-slate-500">Win rate</span><span className="text-[10px] font-semibold tabular-nums text-slate-300">{item.winRate === null ? "—" : item.winRate + "%"}</span></div></div>)}</div> : <p className="rounded-lg border border-dashed border-white/[.08] px-3 py-5 text-center text-xs leading-5 text-slate-500">Market performance will appear when completed journal trades have a recorded realized R result.</p>}
-        </div>
-        <p className="mt-3 text-[10px] leading-5 text-slate-500">Methodology: completed trades with a recorded realized R are included. Win rate excludes breakeven trades. Open, cancelled and unscored trades are excluded. The separate News-trade Barometer includes only trades classified as direct news trades.</p>
       </section>
 
       <section className="mt-9">
@@ -342,7 +284,6 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <JournalWorkspace trades={trades} screenshots={Object.fromEntries(imageByTrade)} />
 
       <footer className="mt-8 border-t border-white/[.07] py-5 text-center text-[10px] text-slate-600">AIS TERMINAL · INTERMARKET STRATEGIST · Journal metrics reflect records entered in your account.</footer>
       </div>
