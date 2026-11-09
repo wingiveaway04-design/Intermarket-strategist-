@@ -26,10 +26,9 @@ export default function PremiumDirectMessages({userId,isAdmin,members,initialCon
  async function beginRecording(){try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});const recorder=new MediaRecorder(stream);recorderRef.current=recorder;chunksRef.current=[];recorder.ondataavailable=e=>{if(e.data.size)chunksRef.current.push(e.data);};recorder.onstop=()=>{const blob=new Blob(chunksRef.current,{type:recorder.mimeType||"audio/webm"});const ext=blob.type.includes("ogg")?"ogg":blob.type.includes("mp4")?"m4a":"webm";void deliver(new File([blob],"voice-message."+ext,{type:blob.type}));stream.getTracks().forEach(t=>t.stop());setRecording(false);};recorder.start();setRecording(true);setError("");}catch{setError("Microphone permission was denied or is unavailable.");}}
  function stopRecording(){recorderRef.current?.stop();}
  const displayName=(memberId:string)=>{const m=members.find(x=>x.id===memberId);return m?.display_name||m?.username||"Premium member";};
- return <section className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#101d30] text-slate-100">
-  <div className="flex items-center justify-between gap-3 p-4"><div><h2 className="font-semibold">Private messages</h2><p className="mt-1 text-xs text-slate-400">{isAdmin?"Your private conversations with Premium members":"Your private conversation with the administrator"}</p></div><button type="button" onClick={()=>setOpen(true)} className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400">Open inbox ↗</button></div>
-  {isAdmin&&<div className="flex items-center justify-between border-t border-white/10 px-4 py-3"><span className="text-xs text-slate-400">{conversations.length} conversation{conversations.length===1?"":"s"}</span><button type="button" onClick={()=>{setOpen(true);setShowMembers(true);}} className="flex items-center gap-2 rounded-full border border-cyan-400/40 px-3 py-2 text-sm text-cyan-200 hover:bg-cyan-400/10"><span className="text-lg leading-none">＋</span> New message</button></div>}
-  {open&&<div className="fixed inset-0 z-[100] flex flex-col bg-[#081321] text-slate-100">
+ return <>
+  <button type="button" onClick={()=>setOpen(true)} className="fixed bottom-24 right-4 z-[110] flex items-center gap-2 rounded-full border border-cyan-300/40 bg-[#10243a] px-4 py-3 text-sm font-semibold text-cyan-100 shadow-2xl shadow-black/50 hover:bg-[#193652]"><span className="text-lg">✉</span><span>Private Messages</span></button>
+  {open&&<div className="fixed inset-0 z-[120] flex flex-col bg-[#081321] text-slate-100">
    <header className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#101d30] px-4 py-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-400/15 text-lg text-cyan-200">✉</div><div className="min-w-0"><h2 className="font-semibold">AIS Private Messages</h2><p className="text-xs text-slate-400">{isAdmin?"Administrator · Premium member inbox":"Private administrator chat"}</p></div></div><button type="button" onClick={()=>{setOpen(false);setShowMembers(false);}} className="rounded-lg border border-white/15 px-3 py-2 text-sm hover:bg-white/5">Close ✕</button></header>
    <div className="grid min-h-0 flex-1 md:grid-cols-[300px_minmax(0,1fr)]">
     <aside className="flex min-h-0 flex-col border-b border-white/10 bg-[#0d1a2b] md:border-b-0 md:border-r">
@@ -44,5 +43,5 @@ export default function PremiumDirectMessages({userId,isAdmin,members,initialCon
     </main>
    </div>
   </div>}
- </section>;
+ </>;
 }
