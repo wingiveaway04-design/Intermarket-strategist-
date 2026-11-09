@@ -172,17 +172,20 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section aria-label="Recent trading performance" className="mt-7">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Performance snapshot</p><h2 className="mt-1 text-base font-semibold text-slate-100">Your recent activity</h2></div><p className="text-[10px] text-slate-500">Latest 1,000 journal records at most</p></div>
+      <section aria-label="Recent trading performance" className="mt-7 rounded-[22px] border border-white/[.07] bg-[linear-gradient(145deg,rgba(16,34,56,.78),rgba(9,21,37,.88))] p-4 shadow-[0_18px_45px_rgba(0,0,0,.16)] sm:p-5">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Performance snapshot</p><h2 className="mt-1 text-lg font-semibold text-slate-100">Trading activity at a glance</h2><p className="mt-1 text-[11px] leading-5 text-slate-500">A concise view of activity and realized outcomes recorded in your private journal.</p></div>
+          <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-white/[.08] bg-white/[.035] px-2.5 py-1.5 text-[9px] font-medium text-slate-400">Up to 1,000 latest records</span><Link href="#journal-analytics" className="rounded-lg border border-cyan-200/15 bg-cyan-200/[.05] px-3 py-1.5 text-[10px] font-semibold text-cyan-100 transition hover:border-cyan-200/30 hover:bg-cyan-200/[.09]">Full analytics ↓</Link></div>
+        </div>
         <div className="grid grid-cols-2 gap-3 sm:gap-3.5 xl:grid-cols-4">
-        <Metric label="Recent records" value={String(analyticsTrades.length)} detail="Latest records loaded from your private journal" accent="cyan" />
-        <Metric label="Active trades" value={String(activeTrades)} detail="Marked in progress in this recent sample" accent="blue" />
-        <Metric label="Markets represented" value={String(new Set(analyticsTrades.map(t => t.market).filter(Boolean)).size)} detail="Distinct market categories in this sample" accent="green" />
-        <Metric label="Net realized R" value={closedTrades.length ? `${netR > 0 ? "+" : ""}${netR.toFixed(2)}R` : "—"} detail="Combined realized R in this recent sample" accent="amber" />
+          <Metric label="Journal records" value={String(analyticsTrades.length)} detail="Records included in this snapshot" accent="cyan" />
+          <Metric label="Open trades" value={String(activeTrades)} detail="Currently marked in progress" accent="blue" />
+          <Metric label="Markets tracked" value={String(new Set(analyticsTrades.map(t => t.market).filter(Boolean)).size)} detail="Distinct market categories in this sample" accent="green" />
+          <Metric label="Net realized R" value={closedTrades.length ? `${netR > 0 ? "+" : ""}${netR.toFixed(2)}R` : "—"} detail="Closed trades with a recorded realized R" accent="amber" />
         </div>
       </section>
 
-      <section aria-label="Journal performance analytics" className="mt-7 rounded-[22px] border border-cyan-200/10 bg-gradient-to-b from-[#102238] to-[#0b192a] p-4 shadow-[0_18px_45px_rgba(0,0,0,.2)] sm:p-5">
+      <section id="journal-analytics" aria-label="Journal performance analytics" className="mt-7 rounded-[22px] border border-cyan-200/10 bg-gradient-to-b from-[#102238] to-[#0b192a] p-4 shadow-[0_18px_45px_rgba(0,0,0,.2)] sm:p-5">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Journal analytics</p><h2 className="mt-1 text-lg font-semibold text-slate-100">Execution performance</h2><p className="mt-1 text-[11px] text-slate-500">Latest {analyticsTrades.length.toLocaleString("en-NG")} records · {Number(journalAnalyticsResult.count ?? analyticsTrades.length).toLocaleString("en-NG")} total journal records</p></div>
           <Link href="/barometer" className="text-xs font-semibold text-cyan-200 hover:text-cyan-100">Detailed news-trade analytics ↗</Link>
