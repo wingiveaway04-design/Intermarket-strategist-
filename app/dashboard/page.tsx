@@ -103,26 +103,35 @@ export default async function DashboardPage() {
       <section id="overview" aria-label="Dashboard overview" className="mt-5">
         <div className="relative overflow-hidden rounded-[26px] border border-cyan-200/20 bg-[radial-gradient(ellipse_at_95%_0%,rgba(34,211,238,.15),transparent_35%),linear-gradient(125deg,#12334c_0%,#10263d_48%,#101b2d_100%)] p-6 shadow-[0_24px_65px_rgba(0,0,0,.25)] sm:p-8">
           <div className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full border border-cyan-200/10" /><div className="pointer-events-none absolute -right-2 -top-6 h-36 w-36 rounded-full border border-cyan-200/10" />
-          <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-cyan-200/75">Analyst workspace</p>
-          <h2 className="mt-3 max-w-xl text-[clamp(1.65rem,3vw,2.35rem)] font-semibold leading-[1.12] tracking-tight sm:mt-4">Connect the macro picture to the market structure.</h2>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">Review published event scenarios, follow official trade ideas, and keep your own execution record in one place.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-cyan-200/75">Your analyst workspace</p><span className={`rounded-full border px-3 py-1.5 text-[9px] font-semibold uppercase tracking-wider ${hasPremium ? "border-emerald-200/20 bg-emerald-200/[.08] text-emerald-100" : "border-white/15 bg-white/[.05] text-slate-300"}`}>{hasPremium ? "Premium access" : "Free membership"}</span></div>
+          <h2 className="mt-4 max-w-2xl break-words text-[clamp(1.65rem,3vw,2.35rem)] font-semibold leading-[1.12] tracking-tight">Welcome back, <span className="text-cyan-100">{displayName}</span>.</h2>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">Your market workspace brings macro context, intermarket confirmation, published analyst ideas and your private execution record together.</p>
           <div className="mt-5 flex flex-wrap gap-2"><Link href="/news-trading" className="rounded-lg bg-cyan-200 px-4 py-2.5 text-xs font-bold text-[#082033] shadow-[0_6px_20px_rgba(34,211,238,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-100">Open Macro Desk ↗</Link><Link href="/journal/new" className="rounded-lg border border-white/15 bg-white/[.05] px-4 py-2.5 text-xs font-semibold text-slate-100 transition hover:border-cyan-100/25 hover:bg-white/[.09]">＋ Record a trade</Link></div>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[.09] pt-4 text-[9px] font-semibold uppercase tracking-[.15em] text-slate-400"><span><span className="mr-1.5 text-cyan-200">01</span> Macro context</span><span><span className="mr-1.5 text-cyan-200">02</span> Intermarket confirmation</span><span><span className="mr-1.5 text-cyan-200">03</span> Disciplined execution</span></div>
         </div>
       </section>
 
+      <section aria-label="Workspace shortcuts" className="mt-7">
+        <PanelHeading eyebrow="Your workspace" title="Quick access" />
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+          <QuickLink href="/macro-radar" icon="◷" title="Macro Event Radar" description="Track upcoming releases and published event scenarios" />
+          <QuickLink href="/cot-reports" icon="◎" title="COT Reports" description="Review weekly positioning across key markets" />
+          <QuickLink href="/sessions#live-sessions" icon="▶" title="Live Sessions" description="See scheduled analyst sessions and discussions" />
+          <QuickLink href="/lounge" icon="◌" title="Community" description="Exchange market perspectives with members" />
+        </div>
+      </section>
 
-      <section aria-label="Recent trading performance" className="mt-5">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Performance snapshot</p><h2 className="mt-1 text-base font-semibold text-slate-100">Your recent activity</h2></div><p className="text-[10px] text-slate-500">Based on your latest 1,000 journal records at most</p></div>
-        <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+      <section aria-label="Recent trading performance" className="mt-7">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Performance snapshot</p><h2 className="mt-1 text-base font-semibold text-slate-100">Your recent activity</h2></div><p className="text-[10px] text-slate-500">Latest 1,000 journal records at most</p></div>
+        <div className="grid grid-cols-2 gap-3 sm:gap-3.5 xl:grid-cols-4">
         <Metric label="Recent records" value={String(analyticsTrades.length)} detail="Latest records loaded from your private journal" accent="cyan" />
-        <Metric label="Active in recent records" value={String(activeTrades)} detail="Marked in progress in this recent sample" accent="blue" />
-        <Metric label="Recent win rate" value={winRate === null ? "—" : `${winRate}%`} detail={closedTrades.length ? `From ${closedTrades.length} recent closed records with R results` : "Add closed-trade results to calculate"} accent="green" />
+        <Metric label="Active trades" value={String(activeTrades)} detail="Marked in progress in this recent sample" accent="blue" />
+        <Metric label="Markets represented" value={String(new Set(analyticsTrades.map(t => t.market).filter(Boolean)).size)} detail="Distinct market categories in this sample" accent="green" />
         <Metric label="Net realized R" value={closedTrades.length ? `${netR > 0 ? "+" : ""}${netR.toFixed(2)}R` : "—"} detail="Combined realized R in this recent sample" accent="amber" />
         </div>
       </section>
 
-      <section aria-label="Journal performance analytics" className="mt-6 rounded-[22px] border border-cyan-200/10 bg-[#0d1b2c] p-4 shadow-[0_18px_45px_rgba(0,0,0,.18)] sm:p-5">
+      <section aria-label="Journal performance analytics" className="mt-7 rounded-[22px] border border-cyan-200/10 bg-gradient-to-b from-[#102238] to-[#0b192a] p-4 shadow-[0_18px_45px_rgba(0,0,0,.2)] sm:p-5">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-cyan-200/70">Journal analytics</p><h2 className="mt-1 text-lg font-semibold text-slate-100">Execution performance</h2><p className="mt-1 text-[11px] text-slate-500">Latest {analyticsTrades.length.toLocaleString("en-NG")} records · {Number(journalAnalyticsResult.count ?? analyticsTrades.length).toLocaleString("en-NG")} total journal records</p></div>
           <Link href="/barometer" className="text-xs font-semibold text-cyan-200 hover:text-cyan-100">Detailed news-trade analytics ↗</Link>
@@ -140,7 +149,7 @@ export default async function DashboardPage() {
         <p className="mt-3 text-[10px] leading-5 text-slate-600">Performance calculations use completed records with a realized R value. Win rate excludes breakeven; open, cancelled and unscored trades are excluded. The detailed news-trading Barometer uses only trades classified as direct news trades.</p>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-9">
         <PanelHeading eyebrow="Market intelligence" title="Research & event watch" href="/news-trading" linkText="Open Macro Desk" />
         <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
           <div className="rounded-2xl border border-white/10 bg-[#101e30] p-4 sm:p-5">
@@ -154,14 +163,14 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-9">
         <PanelHeading eyebrow="Analyst calls" title="Recent public trade ideas" href="/setups" linkText="Browse all ideas" />
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {publicCalls.length ? publicCalls.map(call => <Link key={call.id} href="/setups" className="group rounded-2xl border border-white/10 bg-[#101e30] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200/25 hover:bg-[#12243a]"><div className="flex items-center justify-between gap-2"><span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{call.market.replaceAll("_", " ")}</span><span className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase ${call.direction === "long" ? "bg-emerald-300/10 text-emerald-200" : "bg-rose-300/10 text-rose-200"}`}>{call.direction}</span></div><h3 className="mt-3 text-xl font-semibold tracking-tight text-slate-50">{call.instrument}</h3><p className="mt-2 line-clamp-3 min-h-[3.75rem] text-xs leading-5 text-slate-400">{call.thesis || "Open the trade idea to review the analyst thesis and levels."}</p><div className="mt-4 grid grid-cols-2 gap-2"><div className="rounded-lg border border-white/[.05] bg-black/15 p-2.5"><p className="text-[9px] uppercase tracking-wider text-slate-600">Entry</p><p className="mt-1 text-xs font-semibold text-slate-200">{call.entry_price ?? "Not specified"}</p></div><div className="rounded-lg border border-white/[.05] bg-black/15 p-2.5"><p className="text-[9px] uppercase tracking-wider text-slate-600">Stop loss</p><p className="mt-1 text-xs font-semibold text-slate-200">{call.stop_loss ?? "Not specified"}</p></div></div><div className="mt-3 flex items-center justify-between border-t border-white/[.07] pt-3 text-[10px]"><span className="capitalize text-slate-500">{call.status.replaceAll("_", " ")}</span><span className="font-semibold text-cyan-200 transition group-hover:text-cyan-100">Review call ↗</span></div></Link>) : <div className="sm:col-span-2 xl:col-span-4"><EmptyState>No public trade ideas are currently published.</EmptyState></div>}
         </div>
       </section>
 
-      <section id="journal" className="mt-8">
+      <section id="journal" className="mt-9">
         <PanelHeading eyebrow="Personal trading journal" title="Recent journal activity" href="/journal/new" linkText="＋ Add trade" />
         {tradeResult.error ? <EmptyState>Your journal could not be loaded. Please refresh and try again.</EmptyState> : trades.length ? <div className="grid gap-3 xl:grid-cols-2">{trades.slice(0, 6).map(trade => {
           const screenshot = imageByTrade.get(trade.id);
