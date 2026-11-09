@@ -93,6 +93,18 @@ export default async function DashboardPage() {
   const events = eventResult.data ?? [];
   const research = researchResult.data ?? [];
   const publicCalls = publicTradeResult.data ?? [];
+  const now = Date.now();
+  const upcomingEvents = events
+    .filter(event => event.release_at && new Date(event.release_at).getTime() >= now)
+    .sort((a, b) => new Date(a.release_at!).getTime() - new Date(b.release_at!).getTime());
+  const nextEvent = upcomingEvents[0] ?? null;
+  const marketCoverage = [...new Set([
+    ...analyticsTrades.map(t => t.market),
+    ...publicCalls.map(call => call.market),
+    ...events.map(event => event.market_focus),
+  ].filter((value): value is string => Boolean(value && value.trim()))
+    .map(value => value.trim().replaceAll("_", " ")))].sort((a, b) => a.localeCompare(b));
+  const latestResearch = research[0] ?? null;
 
   return <main className="relative min-h-screen overflow-hidden bg-[#07111f] px-3 py-4 text-slate-100 sm:px-5 sm:py-6 lg:px-8">
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_12%_0%,rgba(34,211,238,.09),transparent_34%),radial-gradient(ellipse_at_90%_18%,rgba(59,130,246,.07),transparent_30%)]" />
@@ -118,6 +130,45 @@ export default async function DashboardPage() {
           <QuickLink href="/cot-reports" icon="◎" title="COT Reports" description="Review weekly positioning across key markets" />
           <QuickLink href="/sessions#live-sessions" icon="▶" title="Live Sessions" description="See scheduled analyst sessions and discussions" />
           <QuickLink href="/lounge" icon="◌" title="Community" description="Exchange market perspectives with members" />
+        </div>
+      </section>
+
+      <section aria-label="Market overview" className="mt-7">
+        <PanelHeading eyebrow="Market intelligence" title="Market overview" />
+        <div className="grid gap-3 lg:grid-cols-3">
+          <div className="min-w-0 rounded-2xl border border-cyan-200/10 bg-[linear-gradient(145deg,#10283b,#0d1c2d)] p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-cyan-200/75">Economic Event Radar</p>
+              <span className="rounded-full border border-cyan-200/10 bg-cyan-200/[.06] px-2 py-1 text-[9px] text-cyan-100">{events.length} outlooks</span>
+            </div>
+            {nextEvent ? <>
+              <p className="mt-4 text-[10px] uppercase tracking-wider text-slate-500">Next scheduled release in published outlooks</p>
+              <h3 className="mt-1 line-clamp-2 text-base font-semibold text-slate-100">{nextEvent.title}</h3>
+              <p className="mt-2 text-xs text-slate-400">{new Date(nextEvent.release_at!).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" })} WAT</p>
+            </> : <p className="mt-4 text-xs leading-5 text-slate-400">No future release time is currently listed in your published event outlooks.</p>}
+            <Link href="/macro-radar" className="mt-4 inline-flex text-xs font-semibold text-cyan-200 hover:text-cyan-100">Open Event Radar ↗</Link>
+          </div>
+          <div className="min-w-0 rounded-2xl border border-blue-200/10 bg-[linear-gradient(145deg,#14243b,#0d1b2d)] p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-blue-200/75">Research Pulse</p>
+              <span className="rounded-full border border-blue-200/10 bg-blue-200/[.06] px-2 py-1 text-[9px] text-blue-100">{research.length} available</span>
+            </div>
+            {latestResearch ? <>
+              <p className="mt-4 text-[10px] uppercase tracking-wider text-slate-500">Latest accessible publication</p>
+              <h3 className="mt-1 line-clamp-2 text-base font-semibold text-slate-100">{latestResearch.title}</h3>
+              <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">{latestResearch.excerpt || latestResearch.category.replaceAll("_", " ")}</p>
+            </> : <p className="mt-4 text-xs leading-5 text-slate-400">No research publications are currently available for your access level.</p>}
+            <Link href="/analysis" className="mt-4 inline-flex text-xs font-semibold text-blue-200 hover:text-blue-100">Open Research Library ↗</Link>
+          </div>
+          <div className="min-w-0 rounded-2xl border border-emerald-200/10 bg-[linear-gradient(145deg,#102b2b,#0d1d2b)] p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-emerald-200/75">Market Coverage</p>
+              <span className="rounded-full border border-emerald-200/10 bg-emerald-200/[.06] px-2 py-1 text-[9px] text-emerald-100">{marketCoverage.length} categories</span>
+            </div>
+            <p className="mt-4 text-[10px] uppercase tracking-wider text-slate-500">Markets represented across your journal, public calls and event outlooks</p>
+            {marketCoverage.length ? <div className="mt-3 flex flex-wrap gap-1.5">{marketCoverage.slice(0, 8).map(market => <span key={market} className="rounded-lg border border-emerald-200/10 bg-emerald-200/[.05] px-2.5 py-1.5 text-[10px] capitalize text-emerald-100">{market}</span>)}</div> : <p className="mt-3 text-xs leading-5 text-slate-400">Market categories will appear as journal entries, public calls or event outlooks are added.</p>}
+            <p className="mt-3 text-[10px] text-slate-500">Based on saved platform records, not live market feeds.</p>
+          </div>
         </div>
       </section>
 
