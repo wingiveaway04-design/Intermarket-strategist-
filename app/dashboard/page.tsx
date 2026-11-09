@@ -92,7 +92,7 @@ export default async function DashboardPage() {
       </header>
 
       <nav aria-label="Terminal sections" className="mt-3 flex gap-2 overflow-x-auto rounded-xl border border-white/[.08] bg-[#0d1a2b] p-2 text-xs whitespace-nowrap">
-        {[["Overview","#overview"],["Live sessions","/sessions#live-sessions"],["Video library","/sessions#session-library"],["News & Macro","/news-trading"],["Trade ideas","/setups"],["Research","/analysis"],["Community","/lounge"],["Private messages","/messages"],["My journal","#journal"]].map(([label,href]) => <Link key={label} href={href} className="rounded-lg px-3 py-2 text-slate-300 transition hover:bg-cyan-200/10 hover:text-cyan-100">{label}</Link>)}
+        {[["Overview","#overview"],["Live sessions","/sessions#live-sessions"],["Video library","/sessions#session-library"],["News & Macro","/news-trading"],["Trade ideas","/setups"],["Research","/analysis"],["COT reports","/cot-reports"],["Community","/lounge"],["Private messages","/messages"],["My journal","#journal"]].map(([label,href]) => <Link key={label} href={href} className="rounded-lg px-3 py-2 text-slate-300 transition hover:bg-cyan-200/10 hover:text-cyan-100">{label}</Link>)}
       </nav>
 
       <section id="overview" className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
