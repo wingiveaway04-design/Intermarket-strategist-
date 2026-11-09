@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import PremiumBadge from "@/components/premium-badge";
 import NotificationBell from "@/components/notification-bell";
 import RecordDeleteButton from "@/components/record-delete-button";
 import TerminalTopNav from "./terminal-top-nav";
