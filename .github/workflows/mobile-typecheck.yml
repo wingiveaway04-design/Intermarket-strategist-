@@ -1,0 +1,30 @@
+name: Mobile typecheck
+
+on:
+  push:
+    branches:
+      - feature/native-app-entry-and-foundation-2026-11-11
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-typecheck.yml"
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript validation
+        run: npm run typecheck
+      - name: Expo configuration validation
+        run: npx expo config --type public
