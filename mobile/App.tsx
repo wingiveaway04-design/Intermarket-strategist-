@@ -147,6 +147,10 @@ export default function App() {
 
   const enablePushNotifications = async () => {
     if (!supabase || !session?.user.id) return;
+    if (Platform.OS !== "android" && Platform.OS !== "ios") {
+      Alert.alert("Mobile device required", "Push notifications are available in the Android and iOS app.");
+      return;
+    }
     if (!Device.isDevice) {
       Alert.alert("Physical device required", "Push notifications need a real Android or iPhone device.");
       return;
@@ -189,6 +193,31 @@ export default function App() {
     } finally {
       setPushBusy(false);
     }
+  };
+
+  const confirmSignOut = () => {
+    Alert.alert("Sign out", "Sign out of this Intermarket Strategist account on this device?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", style: "destructive", onPress: () => {
+        void (async () => {
+          if (supabase && session) {
+            const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;
+            if (projectId) {
+              try {
+                const permission = await Notifications.getPermissionsAsync();
+                if (permission.status === "granted") {
+                  const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+                  await supabase.from("user_push_tokens").delete().eq("user_id", session.user.id).eq("expo_push_token", token);
+                }
+              } catch {
+                // A failed token cleanup must not prevent a normal sign-out.
+              }
+            }
+            await supabase.auth.signOut();
+          }
+        })();
+      } }
+    ]);
   };
 
   const markRead = async (item: NotificationItem) => {
@@ -273,7 +302,7 @@ export default function App() {
       <View style={styles.bottomNav}>
         <Pressable style={styles.navItem} onPress={() => setTab("home")}><Text style={[styles.navText, tab === "home" && styles.navActive]}>Workspace</Text></Pressable>
         <Pressable style={styles.navItem} onPress={() => { setTab("notifications"); void loadNotifications(session.user.id); }}><Text style={[styles.navText, tab === "notifications" && styles.navActive]}>Alerts{unreadCount > 0 ? ` · ${unreadCount}` : ""}</Text></Pressable>
-        <Pressable style={styles.navItem} onPress={() => Alert.alert("Account", "You are signed in. Sign out from the account menu in the next app update.", [{ text: "Close" }, { text: "Sign out", style: "destructive", onPress: () => { void supabase.auth.signOut(); } }])}><Text style={styles.navText}>Account</Text></Pressable>
+        <Pressable style={styles.navItem} onPress={confirmSignOut}><Text style={styles.navText}>Account</Text></Pressable>
       </View>
     </SafeAreaView>
   );
