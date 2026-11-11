@@ -6,7 +6,7 @@ Native Android and iOS application built with Expo / React Native. This is a sep
 
 - Cross-platform Android and iOS project structure using Expo SDK 58.
 - Shared Supabase authentication with sign-in and account creation.
-- Persistent authenticated sessions using Expo SQLite-backed local storage.
+- Persistent authenticated sessions stored with Android Keystore / iOS Keychain through Expo SecureStore.
 - Native member workspace shell and a live notification inbox.
 - Realtime subscription for newly inserted notifications when Supabase Realtime is available.
 - User-owned Expo push-token registry protected by Row Level Security.
