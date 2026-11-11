@@ -38,11 +38,15 @@ type NotificationItem = {
 };
 
 type Profile = { username: string; display_name: string | null; role: "user" | "admin" };
+type WorkspaceTab = "home" | "research" | "ideas" | "journal" | "notifications";
+type ResearchItem = { id: string; title: string; excerpt: string | null; category: string; published_at: string | null; is_premium_only: boolean };
+type TradeIdea = { id: string; instrument: string; market: string; direction: string; status: string; entry_price: number | null; stop_loss: number | null; thesis: string | null; published_at: string | null };
+type JournalTrade = { id: string; instrument: string; market: string; direction: string; status: string; entry_price: number | null; stop_loss: number | null; thesis: string | null; opened_at: string | null; closed_at: string | null; realized_r: number | null; created_at: string };
 
 const webModules = [
-  { number: "01", title: "Research Desk", detail: "Fundamental and intermarket analysis" },
-  { number: "02", title: "Trade Ideas", detail: "Published calls and status updates" },
-  { number: "03", title: "Trading Journal", detail: "Your private records and performance" },
+  { number: "01", title: "Research Desk", detail: "Fundamental and intermarket analysis", screen: "research" as const },
+  { number: "02", title: "Trade Ideas", detail: "Published calls and status updates", screen: "ideas" as const },
+  { number: "03", title: "Trading Journal", detail: "Your private records and performance", screen: "journal" as const },
   { number: "04", title: "Premium Lounge", detail: "Member discussions and shared ideas" },
   { number: "05", title: "Private Messages", detail: "Direct conversations with the analyst" },
   { number: "06", title: "Video Sessions", detail: "Live sessions and recordings" }
@@ -56,10 +60,15 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [booting, setBooting] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [tab, setTab] = useState<"home" | "notifications">("home");
+  const [tab, setTab] = useState<WorkspaceTab>("home");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+  const [researchItems, setResearchItems] = useState<ResearchItem[]>([]);
+  const [tradeIdeas, setTradeIdeas] = useState<TradeIdea[]>([]);
+  const [journalTrades, setJournalTrades] = useState<JournalTrade[]>([]);
+  const [moduleLoading, setModuleLoading] = useState(false);
+  const [moduleError, setModuleError] = useState<string | null>(null);
 
   const loadNotifications = useCallback(async (userId: string) => {
     if (!supabase) return;
@@ -133,6 +142,51 @@ export default function App() {
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [session?.user.id]);
+
+  useEffect(() => {
+    if (!supabase || !session?.user.id || tab === "home" || tab === "notifications") return;
+    let active = true;
+    const loadModule = async () => {
+      setModuleLoading(true);
+      setModuleError(null);
+      try {
+        if (tab === "research") {
+          const { data, error } = await supabase
+            .from("analysis_articles")
+            .select("id,title,excerpt,category,published_at,is_premium_only")
+            .eq("content_state", "published")
+            .order("published_at", { ascending: false })
+            .limit(40);
+          if (error) throw error;
+          if (active) setResearchItems((data ?? []) as ResearchItem[]);
+        } else if (tab === "ideas") {
+          const { data, error } = await supabase
+            .from("public_trades")
+            .select("id,instrument,market,direction,status,entry_price,stop_loss,thesis,published_at")
+            .eq("content_state", "published")
+            .order("published_at", { ascending: false })
+            .limit(40);
+          if (error) throw error;
+          if (active) setTradeIdeas((data ?? []) as TradeIdea[]);
+        } else if (tab === "journal") {
+          const { data, error } = await supabase
+            .from("private_trades")
+            .select("id,instrument,market,direction,status,entry_price,stop_loss,thesis,opened_at,closed_at,realized_r,created_at")
+            .eq("owner_id", session.user.id)
+            .order("created_at", { ascending: false })
+            .limit(100);
+          if (error) throw error;
+          if (active) setJournalTrades((data ?? []) as JournalTrade[]);
+        }
+      } catch (error) {
+        if (active) setModuleError(error instanceof Error ? error.message : "This workspace could not be loaded.");
+      } finally {
+        if (active) setModuleLoading(false);
+      }
+    };
+    void loadModule();
+    return () => { active = false; };
+  }, [tab, session?.user.id]);
 
   const unreadCount = useMemo(() => notifications.filter((item) => !item.read_at).length, [notifications]);
 
@@ -265,11 +319,14 @@ export default function App() {
             <SectionTitle title="YOUR WORKSPACE" meta="MEMBER ACCESS" />
             <View style={styles.moduleList}>
               {webModules.map((item) => (
-                <View key={item.number} style={styles.moduleCard}>
+                <Pressable key={item.number} style={styles.moduleCard} onPress={() => {
+                  if (item.screen) setTab(item.screen);
+                  else Alert.alert(item.title, "This native workspace is scheduled for the next development stage.");
+                }}>
                   <Text style={styles.moduleNumber}>{item.number}</Text>
                   <View style={styles.moduleCopy}><Text style={styles.moduleTitle}>{item.title}</Text><Text style={styles.moduleDetail}>{item.detail}</Text></View>
                   <Text style={styles.moduleArrow}>›</Text>
-                </View>
+                </Pressable>
               ))}
             </View>
             <View style={styles.infoCard}>
@@ -280,7 +337,7 @@ export default function App() {
               </Pressable>
             </View>
           </>
-        ) : (
+        ) : tab === "notifications" ? (
           <>
             <Pressable onPress={() => setTab("home")}><Text style={styles.backLink}>‹  Workspace</Text></Pressable>
             <Text style={styles.pageTitle}>Notifications</Text>
@@ -296,6 +353,44 @@ export default function App() {
                 </Pressable>
               ))}
             </View>
+          </>
+        ) : (
+          <>
+            <Pressable onPress={() => setTab("home")}><Text style={styles.backLink}>‹  Workspace</Text></Pressable>
+            <Text style={styles.pageTitle}>{tab === "research" ? "Research Desk" : tab === "ideas" ? "Trade Ideas" : "Trading Journal"}</Text>
+            <Text style={styles.pageSubtitle}>{tab === "research" ? "Published fundamental and intermarket research" : tab === "ideas" ? "Official published trade setups" : "Private records visible only to your account"}</Text>
+            {moduleLoading && <ActivityIndicator color="#75DDF1" style={{ marginTop: 22 }} />}
+            {moduleError && <View style={styles.emptyCard}><Text style={styles.emptyTitle}>Workspace unavailable</Text><Text style={styles.moduleDetail}>{moduleError}</Text></View>}
+            {!moduleLoading && !moduleError && tab === "research" && researchItems.length === 0 && <EmptyState title="No published research yet" detail="New analyst research will appear here when it is published." />}
+            {!moduleLoading && !moduleError && tab === "ideas" && tradeIdeas.length === 0 && <EmptyState title="No published trade ideas yet" detail="Official trade ideas will appear here when they are published." />}
+            {!moduleLoading && !moduleError && tab === "journal" && journalTrades.length === 0 && <EmptyState title="Your journal is ready" detail="Your private trade records will appear here. They are not visible to other members." />}
+            {tab === "research" && researchItems.map((item) => (
+              <View key={item.id} style={styles.dataCard}>
+                <Text style={styles.dataEyebrow}>{item.category.replaceAll("_", " ").toUpperCase()}{item.is_premium_only ? "  ·  PREMIUM" : ""}</Text>
+                <Text style={styles.dataTitle}>{item.title}</Text>
+                {!!item.excerpt && <Text style={styles.dataBody}>{item.excerpt}</Text>}
+                {!!item.published_at && <Text style={styles.notificationDate}>{formatDate(item.published_at)}</Text>}
+              </View>
+            ))}
+            {tab === "ideas" && tradeIdeas.map((item) => (
+              <View key={item.id} style={styles.dataCard}>
+                <View style={styles.notificationTop}><Text style={styles.dataTitle}>{item.instrument}</Text><Text style={styles.statusPill}>{item.status.replaceAll("_", " ").toUpperCase()}</Text></View>
+                <Text style={styles.dataEyebrow}>{item.market.toUpperCase()}  ·  {item.direction.toUpperCase()}</Text>
+                <Text style={styles.dataBody}>Entry: {item.entry_price ?? "—"}  ·  Stop: {item.stop_loss ?? "—"}</Text>
+                {!!item.thesis && <Text style={styles.dataBody}>{item.thesis}</Text>}
+                {!!item.published_at && <Text style={styles.notificationDate}>{formatDate(item.published_at)}</Text>}
+              </View>
+            ))}
+            {tab === "journal" && journalTrades.map((item) => (
+              <View key={item.id} style={styles.dataCard}>
+                <View style={styles.notificationTop}><Text style={styles.dataTitle}>{item.instrument}</Text><Text style={styles.statusPill}>{item.status.replaceAll("_", " ").toUpperCase()}</Text></View>
+                <Text style={styles.dataEyebrow}>{item.market.toUpperCase()}  ·  {item.direction.toUpperCase()}</Text>
+                <Text style={styles.dataBody}>Entry: {item.entry_price ?? "—"}  ·  Stop: {item.stop_loss ?? "—"}</Text>
+                <Text style={styles.dataBody}>Realized R: {item.realized_r ?? "Not closed"}</Text>
+                {!!item.thesis && <Text style={styles.dataBody}>{item.thesis}</Text>}
+                <Text style={styles.notificationDate}>Recorded {formatDate(item.created_at)}</Text>
+              </View>
+            ))}
           </>
         )}
       </ScrollView>
@@ -385,6 +480,10 @@ function Brand() {
   return <View style={styles.brandRow}><View style={styles.logo}><Text style={styles.logoText}>AIS</Text></View><View><Text style={styles.brandTitle}>INTERMARKET STRATEGIST</Text><Text style={styles.brandSub}>MOBILE TERMINAL</Text></View></View>;
 }
 
+function EmptyState({ title, detail }: { title: string; detail: string }) {
+  return <View style={styles.emptyCard}><Text style={styles.emptyTitle}>{title}</Text><Text style={styles.moduleDetail}>{detail}</Text></View>;
+}
+
 function SectionTitle({ title, meta }: { title: string; meta: string }) {
   return <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>{title}</Text><Text style={styles.sectionMeta}>{meta}</Text></View>;
 }
@@ -445,6 +544,11 @@ const styles = StyleSheet.create({
   notificationDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#67DDF3" },
   notificationBody: { color: "#9AAFC2", fontSize: 11, lineHeight: 17, marginTop: 7 },
   notificationDate: { color: "#647D94", fontSize: 9, marginTop: 10 },
+  dataCard: { padding: 15, borderRadius: 14, borderWidth: 1, borderColor: "#1B344B", backgroundColor: "#0C1C2D", marginBottom: 9 },
+  dataEyebrow: { color: "#68CDE4", fontSize: 8, fontWeight: "800", letterSpacing: 1.1 },
+  dataTitle: { color: "#EAF2FF", fontSize: 14, fontWeight: "800", flex: 1, marginTop: 7 },
+  dataBody: { color: "#9AAFC2", fontSize: 11, lineHeight: 17, marginTop: 7 },
+  statusPill: { color: "#B7F1FB", fontSize: 8, fontWeight: "800", backgroundColor: "#17364A", paddingHorizontal: 8, paddingVertical: 5, borderRadius: 7, overflow: "hidden" },
   emptyCard: { padding: 18, borderRadius: 15, borderWidth: 1, borderColor: "#1B344B", backgroundColor: "#0C1C2D", marginTop: 12 },
   emptyTitle: { color: "#EAF2FF", fontSize: 14, fontWeight: "700", marginBottom: 6 },
   muted: { color: "#91A9BF", fontSize: 12 },
