@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import ThemeSwitcher from "@/components/theme-switcher";
 
 export const metadata: Metadata = {
   title: "Intermarket Strategist | Financial Research",
@@ -13,7 +12,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" data-theme="dark">
       <head><script dangerouslySetInnerHTML={{ __html: themeBootstrap }} /></head>
-      <body>{children}<ThemeSwitcher /></body>
+      <body>{children}</body>
     </html>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import NotificationBell from "@/components/notification-bell";
+import ThemeSwitcher from "@/components/theme-switcher";
 
 const sections = [
   {
@@ -93,6 +94,7 @@ export default function TerminalTopNav({ isPremium, isAdmin }: { isPremium: bool
             <div className="mt-4 border-t border-white/[.07] pt-3">
               <p className="mb-2 text-[9px] font-bold uppercase tracking-[.18em] text-cyan-200">Membership & account</p>
               <div className="flex flex-wrap items-center gap-2">
+                <ThemeSwitcher />
                 {isPremium ? (
                   <span className="rounded-lg border border-emerald-200/15 bg-emerald-200/[.06] px-3 py-2 text-[10px] font-medium text-emerald-100">Premium access active</span>
                 ) : (
