@@ -47,6 +47,7 @@ export default async function HomePage() {
           <nav className="flex items-center gap-2 text-xs sm:gap-3 sm:text-sm">
             <Link href="/analysis" className="hidden rounded-lg px-3 py-2 text-slate-300 transition hover:bg-white/5 hover:text-cyan-200 sm:inline-flex">Research</Link>
             <Link href="/setups" className="hidden rounded-lg px-3 py-2 text-slate-300 transition hover:bg-white/5 hover:text-cyan-200 sm:inline-flex">Trade ideas</Link>
+            <Link href="/app" className="hidden rounded-lg px-3 py-2 text-cyan-200 transition hover:bg-cyan-300/10 sm:inline-flex">Get the App</Link>
             {isAdmin && <Link href="/admin" className="hidden rounded-lg px-3 py-2 text-violet-200 hover:bg-violet-300/10 sm:inline-flex">Admin</Link>}
             <Link href={user ? "/dashboard" : "/login"} className="rounded-lg border border-white/10 px-3 py-2 text-slate-200 transition hover:border-cyan-300/30 hover:text-cyan-100">{user ? "AIS Terminal" : "Sign in"}</Link>
             {!user && <Link href="/register" className="rounded-lg bg-cyan-400 px-3 py-2 font-semibold text-slate-950 transition hover:bg-cyan-300">Create account</Link>}
@@ -149,7 +150,7 @@ export default async function HomePage() {
       <footer className="border-t border-white/[.08] bg-[#050d17] px-5 py-7 sm:px-8 lg:px-10">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <span className="font-semibold tracking-[.14em] text-slate-300">INTERMARKET STRATEGIST</span>
-          <div className="flex flex-wrap gap-4"><Link href="/analysis" className="hover:text-cyan-200">Research</Link><Link href="/setups" className="hover:text-cyan-200">Trade ideas</Link><Link href="/pricing" className="hover:text-cyan-200">Membership</Link><Link href="/login" className="hover:text-cyan-200">Sign in</Link></div>
+          <div className="flex flex-wrap gap-4"><Link href="/analysis" className="hover:text-cyan-200">Research</Link><Link href="/setups" className="hover:text-cyan-200">Trade ideas</Link><Link href="/pricing" className="hover:text-cyan-200">Membership</Link><Link href="/app" className="hover:text-cyan-200">Get the App</Link><Link href="/login" className="hover:text-cyan-200">Sign in</Link></div>
           <span>Research and education · Not investment advice</span>
         </div>
       </footer>
