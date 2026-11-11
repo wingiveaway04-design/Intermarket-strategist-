@@ -30,6 +30,7 @@ const sections = [
       ["Video Library", "/sessions#session-library", "Watch previous sessions"],
       ["Community", "/lounge", "Discuss markets with members"],
       ["Messages", "/messages", "Private member conversations"],
+      ["Get the App", "/app", "Install the native Android and iPhone application"],
     ],
   },
 ] as const;
