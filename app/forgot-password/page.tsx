@@ -34,8 +34,8 @@ export default function ForgotPasswordPage() {
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
-    const cleanToken = token.replace(/\\s/g, "");
-    if (!/^\\d{6}$/.test(cleanToken)) {
+    const cleanToken = token.replace(/\s/g, "");
+    if (!/^\d{6}$/.test(cleanToken)) {
       setMessage("Enter the 6-digit code from the recovery email.");
       return;
     }
@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
             </div>
             <label className="block text-sm font-medium text-slate-300">
               6-digit recovery code
-              <input className={inputClass} required type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={token} onChange={(event) => setToken(event.target.value.replace(/\\D/g, "").slice(0, 6))} placeholder="000000" />
+              <input className={inputClass} required type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={token} onChange={(event) => setToken(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" />
             </label>
             {message && <p role="alert" className="rounded-xl border border-rose-300/20 bg-rose-300/[.06] px-4 py-3 text-sm text-rose-200">{message}</p>}
             <button disabled={busy} className="flex min-h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-bold text-white disabled:opacity-60">
