@@ -62,12 +62,11 @@ html[data-theme="light"] body .field option { background: #F5F7FA; color: #172B4
 
 /* Compact appearance control shared by public pages and the AIS Terminal */
 .ais-theme-switcher {
-  position: fixed; right: max(14px, env(safe-area-inset-right));
-  bottom: max(14px, env(safe-area-inset-bottom)); z-index: 80;
+  position: relative; z-index: 60; flex: 0 0 auto;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
 .ais-theme-trigger {
-  display: inline-flex; align-items: center; gap: 9px; min-height: 42px; padding: 0 14px;
+  display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 10px;
   border: 1px solid rgba(148,163,184,.28); border-radius: 999px;
   background: rgba(12,27,44,.94); color: #EAF2FF;
   box-shadow: 0 8px 28px rgba(2,8,23,.24); backdrop-filter: blur(16px);
@@ -76,7 +75,8 @@ html[data-theme="light"] body .field option { background: #F5F7FA; color: #172B4
 .ais-theme-trigger:hover { border-color: rgba(34,211,238,.55); }
 .ais-theme-trigger-value { padding-left: 8px; border-left: 1px solid rgba(148,163,184,.28); color: #8BDFFF; font-size: 11px; font-weight: 600; }
 .ais-theme-popover {
-  width: min(284px, calc(100vw - 28px)); margin-bottom: 10px; padding: 12px;
+  position: absolute; right: 0; bottom: calc(100% + 8px);
+  width: min(260px, calc(100vw - 28px)); margin: 0; padding: 10px;
   border: 1px solid rgba(148,163,184,.25); border-radius: 18px;
   background: #101F34; color: #EAF2FF; box-shadow: 0 18px 55px rgba(2,8,23,.38);
   backdrop-filter: blur(18px);
@@ -101,4 +101,4 @@ html[data-theme="light"] .ais-theme-option-icon { background: #E2EAF2; color: #1
 html[data-theme="light"] .ais-theme-option-copy small,
 html[data-theme="light"] .ais-theme-note { color: #64758A; }
 html[data-theme="light"] .ais-theme-check { color: #147FA8; }
-@media (max-width: 480px) { .ais-theme-trigger { min-height: 40px; padding: 0 12px; } }
+@media (max-width: 480px) { .ais-theme-trigger { min-height: 34px; padding: 0 10px; } }
