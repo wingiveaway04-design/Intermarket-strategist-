@@ -155,7 +155,7 @@ export default function App() {
       Alert.alert("Physical device required", "Push notifications need a real Android or iPhone device.");
       return;
     }
-    const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;
+    const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId ?? process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
     if (!projectId) {
       Alert.alert("Push setup in progress", "The Expo application project must be linked before this device can register for push alerts. Your in-app notification inbox is already connected.");
       return;
