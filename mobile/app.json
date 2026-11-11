@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Intermarket Strategist",
+    "slug": "intermarket-strategist",
+    "scheme": "intermarketstrategist",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.intermarketstrategist.app"
+    },
+    "android": {
+      "package": "com.intermarketstrategist.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#07111F"
+      }
+    }
+  }
+}
