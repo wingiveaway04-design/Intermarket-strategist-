@@ -38,7 +38,7 @@ type NotificationItem = {
 };
 
 type Profile = { username: string; display_name: string | null; role: "user" | "admin" };
-type WorkspaceTab = "home" | "research" | "ideas" | "journal" | "notifications";
+type WorkspaceTab = "home" | "research" | "ideas" | "journal" | "community" | "messages" | "notifications";
 type ResearchItem = { id: string; title: string; excerpt: string | null; category: string; published_at: string | null; is_premium_only: boolean };
 type TradeIdea = { id: string; instrument: string; market: string; direction: string; status: string; entry_price: number | null; stop_loss: number | null; thesis: string | null; published_at: string | null };
 type JournalTrade = { id: string; instrument: string; market: string; direction: string; status: string; entry_price: number | null; stop_loss: number | null; thesis: string | null; opened_at: string | null; closed_at: string | null; realized_r: number | null; created_at: string };
@@ -47,8 +47,8 @@ const webModules = [
   { number: "01", title: "Research Desk", detail: "Fundamental and intermarket analysis", screen: "research" as const },
   { number: "02", title: "Trade Ideas", detail: "Published calls and status updates", screen: "ideas" as const },
   { number: "03", title: "Trading Journal", detail: "Your private records and performance", screen: "journal" as const },
-  { number: "04", title: "Premium Lounge", detail: "Member discussions and shared ideas" },
-  { number: "05", title: "Private Messages", detail: "Direct conversations with the analyst" },
+  { number: "04", title: "Premium Lounge", detail: "Member discussions and shared ideas", screen: "community" as const },
+  { number: "05", title: "Private Messages", detail: "Direct conversations with the analyst", screen: "messages" as const },
   { number: "06", title: "Video Sessions", detail: "Live sessions and recordings" }
 ];
 
@@ -354,6 +354,10 @@ export default function App() {
               ))}
             </View>
           </>
+        ) : tab === "community" ? (
+          <CommunityScreen userId={session.user.id} onBack={() => setTab("home")} />
+        ) : tab === "messages" ? (
+          <DirectMessagesScreen userId={session.user.id} isAdmin={profile?.role === "admin"} onBack={() => setTab("home")} />
         ) : (
           <>
             <Pressable onPress={() => setTab("home")}><Text style={styles.backLink}>‹  Workspace</Text></Pressable>
@@ -400,6 +404,267 @@ export default function App() {
         <Pressable style={styles.navItem} onPress={confirmSignOut}><Text style={styles.navText}>Account</Text></Pressable>
       </View>
     </SafeAreaView>
+  );
+}
+
+
+type CommunityMessage = {
+  id: string; user_id: string; body: string; message_type: string;
+  created_at: string; is_pinned: boolean; edited_at: string | null;
+};
+type DirectConversation = {
+  id: string; admin_id: string; member_id: string; updated_at: string;
+  otherName: string; lastMessage: string; lastAt: string;
+};
+type DirectMessage = {
+  id: string; conversation_id: string; sender_id: string; body: string;
+  message_type: string; created_at: string; read_at: string | null;
+};
+
+function CommunityScreen({ userId, onBack }: { userId: string; onBack: () => void }) {
+  const [messages, setMessages] = useState<CommunityMessage[]>([]);
+  const [authors, setAuthors] = useState<Record<string, string>>({});
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!supabase) return;
+    setLoading(true);
+    setError(null);
+    const { data, error: queryError } = await supabase
+      .from("premium_chat_messages")
+      .select("id,user_id,body,message_type,created_at,is_pinned,edited_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (queryError) {
+      setError(queryError.message);
+      setMessages([]);
+      setLoading(false);
+      return;
+    }
+    const rows = (data ?? []).reverse() as CommunityMessage[];
+    setMessages(rows);
+    const ids = [...new Set(rows.map((row) => row.user_id))];
+    if (ids.length) {
+      const { data: people } = await supabase.from("profiles").select("id,username,display_name").in("id", ids);
+      const names: Record<string, string> = {};
+      (people ?? []).forEach((person: { id: string; username: string; display_name: string | null }) => {
+        names[person.id] = person.display_name || person.username;
+      });
+      setAuthors(names);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+    if (!supabase) return;
+    const channel = supabase.channel("mobile-premium-lounge")
+      .on("postgres_changes", { event: "*", schema: "public", table: "premium_chat_messages" }, () => { void load(); })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [load]);
+
+  const send = async () => {
+    const body = draft.trim();
+    if (!supabase || !body || sending) return;
+    setSending(true);
+    const { error: insertError } = await supabase.from("premium_chat_messages").insert({
+      user_id: userId, body, message_type: "text"
+    });
+    if (insertError) {
+      Alert.alert("Message not sent", insertError.message);
+    } else {
+      setDraft("");
+      await load();
+    }
+    setSending(false);
+  };
+
+  return (
+    <View>
+      <Pressable onPress={onBack}><Text style={styles.backLink}>‹  Workspace</Text></Pressable>
+      <View style={styles.screenHeadingRow}>
+        <View style={{ flex: 1 }}><Text style={styles.pageTitle}>Premium Lounge</Text><Text style={styles.pageSubtitle}>Shared member discussion · latest 100 messages</Text></View>
+        <Pressable style={styles.refreshButton} onPress={() => void load()}><Text style={styles.refreshText}>Refresh</Text></Pressable>
+      </View>
+      {loading && <ActivityIndicator color="#75DDF1" style={{ marginTop: 18 }} />}
+      {error && <View style={styles.emptyCard}><Text style={styles.emptyTitle}>Lounge unavailable</Text><Text style={styles.moduleDetail}>{error}</Text></View>}
+      {!loading && !error && messages.length === 0 && <EmptyState title="The lounge is quiet" detail="New messages from eligible members will appear here." />}
+      <View style={styles.chatList}>
+        {messages.map((item) => (
+          <View key={item.id} style={[styles.chatBubble, item.user_id === userId && styles.chatBubbleMine]}>
+            <View style={styles.notificationTop}>
+              <Text style={styles.chatAuthor}>{item.user_id === userId ? "You" : authors[item.user_id] || "Member"}</Text>
+              {item.is_pinned && <Text style={styles.pinnedLabel}>PINNED</Text>}
+            </View>
+            <Text style={styles.chatBody}>{item.body || (item.message_type === "text" ? "" : "Shared " + item.message_type)}</Text>
+            <Text style={styles.notificationDate}>{formatDate(item.created_at)}{item.edited_at ? " · edited" : ""}</Text>
+          </View>
+        ))}
+      </View>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <View style={styles.composer}>
+          <TextInput value={draft} onChangeText={setDraft} placeholder="Write to the lounge…" placeholderTextColor="#61788F" multiline style={styles.composerInput} />
+          <Pressable style={[styles.sendButton, (!draft.trim() || sending) && styles.buttonDisabled]} onPress={() => void send()} disabled={!draft.trim() || sending}>
+            {sending ? <ActivityIndicator color="#071522" /> : <Text style={styles.sendButtonText}>Send</Text>}
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+function DirectMessagesScreen({ userId, isAdmin, onBack }: { userId: string; isAdmin: boolean; onBack: () => void }) {
+  const [conversations, setConversations] = useState<DirectConversation[]>([]);
+  const [selected, setSelected] = useState<DirectConversation | null>(null);
+  const [messages, setMessages] = useState<DirectMessage[]>([]);
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadConversations = useCallback(async () => {
+    if (!supabase) return;
+    setLoading(true);
+    setError(null);
+    const { data, error: queryError } = await supabase
+      .from("premium_direct_conversations")
+      .select("id,admin_id,member_id,updated_at")
+      .order("updated_at", { ascending: false });
+    if (queryError) {
+      setError(queryError.message);
+      setLoading(false);
+      return;
+    }
+    const rows = data ?? [];
+    const otherIds = [...new Set(rows.map((row: { admin_id: string; member_id: string }) => isAdmin ? row.member_id : row.admin_id))];
+    const { data: people } = otherIds.length
+      ? await supabase.from("profiles").select("id,username,display_name").in("id", otherIds)
+      : { data: [] as { id: string; username: string; display_name: string | null }[] };
+    const peopleById: Record<string, string> = {};
+    (people ?? []).forEach((person: { id: string; username: string; display_name: string | null }) => {
+      peopleById[person.id] = person.display_name || person.username;
+    });
+    const conversationIds = rows.map((row: { id: string }) => row.id);
+    const { data: recentMessages } = conversationIds.length
+      ? await supabase.from("premium_direct_messages")
+          .select("id,conversation_id,sender_id,body,message_type,created_at,read_at")
+          .in("conversation_id", conversationIds)
+          .order("created_at", { ascending: false })
+          .limit(300)
+      : { data: [] as DirectMessage[] };
+    const latest: Record<string, DirectMessage> = {};
+    (recentMessages ?? []).forEach((message: DirectMessage) => {
+      if (!latest[message.conversation_id]) latest[message.conversation_id] = message;
+    });
+    const mapped = rows.map((row: { id: string; admin_id: string; member_id: string; updated_at: string }) => ({
+      ...row,
+      otherName: peopleById[isAdmin ? row.member_id : row.admin_id] || (isAdmin ? "Member" : "Analyst"),
+      lastMessage: latest[row.id]?.body || (latest[row.id] ? "Shared " + latest[row.id].message_type : "No messages yet"),
+      lastAt: latest[row.id]?.created_at || row.updated_at
+    }));
+    setConversations(mapped);
+    if (selected) {
+      const refreshed = mapped.find((item) => item.id === selected.id);
+      if (refreshed) setSelected(refreshed);
+    }
+    setLoading(false);
+  }, [isAdmin, selected?.id]);
+
+  const loadMessages = useCallback(async (conversationId: string) => {
+    if (!supabase) return;
+    const { data, error: queryError } = await supabase
+      .from("premium_direct_messages")
+      .select("id,conversation_id,sender_id,body,message_type,created_at,read_at")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true })
+      .limit(150);
+    if (queryError) {
+      setError(queryError.message);
+      return;
+    }
+    setMessages((data ?? []) as DirectMessage[]);
+  }, []);
+
+  useEffect(() => { void loadConversations(); }, [loadConversations]);
+
+  useEffect(() => {
+    if (!selected || !supabase) return;
+    void loadMessages(selected.id);
+    const channel = supabase.channel("mobile-dm-" + selected.id)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "premium_direct_messages", filter: "conversation_id=eq." + selected.id }, (payload) => {
+        const next = payload.new as DirectMessage;
+        setMessages((current) => current.some((item) => item.id === next.id) ? current : [...current, next]);
+        void loadConversations();
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [selected?.id, loadMessages, loadConversations]);
+
+  const send = async () => {
+    const body = draft.trim();
+    if (!supabase || !selected || !body || sending) return;
+    setSending(true);
+    const { error: insertError } = await supabase.from("premium_direct_messages").insert({
+      conversation_id: selected.id, sender_id: userId, body, message_type: "text"
+    });
+    if (insertError) {
+      Alert.alert("Message not sent", insertError.message);
+    } else {
+      setDraft("");
+      await loadMessages(selected.id);
+      await loadConversations();
+    }
+    setSending(false);
+  };
+
+  if (selected) {
+    return (
+      <View>
+        <Pressable onPress={() => { setSelected(null); setMessages([]); void loadConversations(); }}><Text style={styles.backLink}>‹  All conversations</Text></Pressable>
+        <Text style={styles.pageTitle}>{selected.otherName}</Text>
+        <Text style={styles.pageSubtitle}>Private conversation · visible only to its participants</Text>
+        <View style={styles.chatList}>
+          {messages.map((item) => (
+            <View key={item.id} style={[styles.chatBubble, item.sender_id === userId && styles.chatBubbleMine]}>
+              <Text style={styles.chatBody}>{item.body || "Shared " + item.message_type}</Text>
+              <Text style={styles.notificationDate}>{formatDate(item.created_at)}{item.sender_id === userId ? " · You" : ""}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.composer}>
+          <TextInput value={draft} onChangeText={setDraft} placeholder="Write a private message…" placeholderTextColor="#61788F" multiline style={styles.composerInput} />
+          <Pressable style={[styles.sendButton, (!draft.trim() || sending) && styles.buttonDisabled]} onPress={() => void send()} disabled={!draft.trim() || sending}>
+            {sending ? <ActivityIndicator color="#071522" /> : <Text style={styles.sendButtonText}>Send</Text>}
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      <Pressable onPress={onBack}><Text style={styles.backLink}>‹  Workspace</Text></Pressable>
+      <View style={styles.screenHeadingRow}>
+        <View style={{ flex: 1 }}><Text style={styles.pageTitle}>Private Messages</Text><Text style={styles.pageSubtitle}>Direct conversations with the analyst</Text></View>
+        <Pressable style={styles.refreshButton} onPress={() => void loadConversations()}><Text style={styles.refreshText}>Refresh</Text></Pressable>
+      </View>
+      {loading && <ActivityIndicator color="#75DDF1" style={{ marginTop: 18 }} />}
+      {error && <View style={styles.emptyCard}><Text style={styles.emptyTitle}>Messages unavailable</Text><Text style={styles.moduleDetail}>{error}</Text></View>}
+      {!loading && !error && conversations.length === 0 && <EmptyState title="No conversations yet" detail={isAdmin ? "Member conversations created from the website will appear here." : "Your private conversation will appear here once it has been opened for your account."} />}
+      <View style={styles.moduleList}>
+        {conversations.map((item) => (
+          <Pressable key={item.id} style={styles.conversationCard} onPress={() => { setSelected(item); setError(null); }}>
+            <View style={styles.conversationAvatar}><Text style={styles.conversationAvatarText}>{item.otherName.slice(0,1).toUpperCase()}</Text></View>
+            <View style={styles.moduleCopy}><Text style={styles.moduleTitle}>{item.otherName}</Text><Text style={styles.moduleDetail} numberOfLines={1}>{item.lastMessage}</Text><Text style={styles.notificationDate}>{formatDate(item.lastAt)}</Text></View>
+            <Text style={styles.moduleArrow}>›</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -567,5 +832,21 @@ const styles = StyleSheet.create({
   primaryButton: { minHeight: 49, borderRadius: 11, backgroundColor: "#8BE8F7", alignItems: "center", justifyContent: "center", marginTop: 7 },
   primaryButtonText: { color: "#071522", fontSize: 12, fontWeight: "900" },
   buttonDisabled: { opacity: 0.65 },
-  authFootnote: { color: "#637C92", fontSize: 9, textAlign: "center", marginTop: 15 }
+  authFootnote: { color: "#637C92", fontSize: 9, textAlign: "center", marginTop: 15 },
+  screenHeadingRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  refreshButton: { borderWidth: 1, borderColor: "#2A526B", borderRadius: 9, paddingHorizontal: 11, paddingVertical: 8 },
+  refreshText: { color: "#AEEBF7", fontSize: 10, fontWeight: "700" },
+  chatList: { gap: 9, marginTop: 8, marginBottom: 14 },
+  chatBubble: { alignSelf: "flex-start", maxWidth: "90%", padding: 12, borderRadius: 13, borderWidth: 1, borderColor: "#1D3A51", backgroundColor: "#0C1C2D" },
+  chatBubbleMine: { alignSelf: "flex-end", borderColor: "#28556B", backgroundColor: "#102B3E" },
+  chatAuthor: { color: "#8BE8F7", fontSize: 10, fontWeight: "800" },
+  pinnedLabel: { color: "#E8B66A", fontSize: 8, fontWeight: "900" },
+  chatBody: { color: "#E2ECF6", fontSize: 12, lineHeight: 18, marginTop: 5 },
+  composer: { flexDirection: "row", alignItems: "flex-end", gap: 8, borderTopWidth: 1, borderTopColor: "#1A3045", paddingTop: 11, marginTop: 5 },
+  composerInput: { flex: 1, minHeight: 45, maxHeight: 110, borderWidth: 1, borderColor: "#29445B", borderRadius: 11, backgroundColor: "#081624", color: "#F3F7FC", paddingHorizontal: 12, paddingVertical: 10, fontSize: 12 },
+  sendButton: { minWidth: 58, height: 44, borderRadius: 10, backgroundColor: "#8BE8F7", alignItems: "center", justifyContent: "center", paddingHorizontal: 10 },
+  sendButtonText: { color: "#071522", fontSize: 11, fontWeight: "900" },
+  conversationCard: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 76, borderRadius: 14, borderWidth: 1, borderColor: "#1B344B", backgroundColor: "#0C1C2D", padding: 12 },
+  conversationAvatar: { width: 40, height: 40, borderRadius: 14, backgroundColor: "#17364A", alignItems: "center", justifyContent: "center" },
+  conversationAvatarText: { color: "#AEEBF7", fontSize: 14, fontWeight: "900" }
 });
