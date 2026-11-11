@@ -566,6 +566,7 @@ function DirectMessagesScreen({ userId, isAdmin, onBack }: { userId: string; isA
       lastMessage: latest[row.id]?.body || (latest[row.id] ? "Shared " + latest[row.id].message_type : "No messages yet"),
       lastAt: latest[row.id]?.created_at || row.updated_at
     }));
+    mapped.sort((a, b) => Date.parse(b.lastAt) - Date.parse(a.lastAt));
     setConversations(mapped);
     if (selected) {
       const refreshed = mapped.find((item) => item.id === selected.id);
@@ -580,13 +581,13 @@ function DirectMessagesScreen({ userId, isAdmin, onBack }: { userId: string; isA
       .from("premium_direct_messages")
       .select("id,conversation_id,sender_id,body,message_type,created_at,read_at")
       .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(150);
     if (queryError) {
       setError(queryError.message);
       return;
     }
-    setMessages((data ?? []) as DirectMessage[]);
+    setMessages(((data ?? []) as DirectMessage[]).reverse());
   }, []);
 
   useEffect(() => { void loadConversations(); }, [loadConversations]);
