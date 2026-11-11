@@ -24,7 +24,8 @@
           "defaultChannel": "market-updates",
           "enableRemoteNotifications": true
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }
