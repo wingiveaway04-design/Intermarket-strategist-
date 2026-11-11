@@ -15,6 +15,16 @@
       "adaptiveIcon": {
         "backgroundColor": "#07111F"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#67DDF3",
+          "defaultChannel": "market-updates",
+          "enableRemoteNotifications": true
+        }
+      ]
+    ]
   }
 }
