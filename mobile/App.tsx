@@ -249,7 +249,7 @@ export default function App() {
       <View style={styles.topbar}>
         <Brand />
         <Pressable style={styles.bellButton} onPress={() => { setTab("notifications"); void loadNotifications(session.user.id); }} accessibilityRole="button" accessibilityLabel={`Notifications, ${unreadCount} unread`}>
-          <Text style={styles.bellIcon}>♧</Text>
+          <Text style={styles.bellIcon}>🔔</Text>
           {unreadCount > 0 && <View style={styles.unreadBadge}><Text style={styles.unreadBadgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text></View>}
         </Pressable>
       </View>
