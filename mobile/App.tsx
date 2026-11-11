@@ -14,7 +14,19 @@ import {
   View
 } from "react-native";
 import type { Session } from "@supabase/supabase-js";
+import Constants from "expo-constants";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
 import { supabase } from "./lib/supabase";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true
+  })
+});
 
 type NotificationItem = {
   id: string;
@@ -47,6 +59,7 @@ export default function App() {
   const [tab, setTab] = useState<"home" | "notifications">("home");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
 
   const loadNotifications = useCallback(async (userId: string) => {
     if (!supabase) return;
@@ -123,6 +136,61 @@ export default function App() {
 
   const unreadCount = useMemo(() => notifications.filter((item) => !item.read_at).length, [notifications]);
 
+  useEffect(() => {
+    if (!session?.user.id) return;
+    const responseListener = Notifications.addNotificationResponseReceivedListener(() => {
+      setTab("notifications");
+      void loadNotifications(session.user.id);
+    });
+    return () => responseListener.remove();
+  }, [session?.user.id, loadNotifications]);
+
+  const enablePushNotifications = async () => {
+    if (!supabase || !session?.user.id) return;
+    if (!Device.isDevice) {
+      Alert.alert("Physical device required", "Push notifications need a real Android or iPhone device.");
+      return;
+    }
+    const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;
+    if (!projectId) {
+      Alert.alert("Push setup in progress", "The Expo application project must be linked before this device can register for push alerts. Your in-app notification inbox is already connected.");
+      return;
+    }
+    setPushBusy(true);
+    try {
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("market-updates", {
+          name: "Market updates",
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 180, 250],
+          sound: "default",
+          lightColor: "#67DDF3"
+        });
+      }
+      const current = await Notifications.getPermissionsAsync();
+      const permission = current.status === "granted" ? current : await Notifications.requestPermissionsAsync();
+      if (permission.status !== "granted") {
+        Alert.alert("Notifications not enabled", "You can enable notifications later in your phone's app settings.");
+        return;
+      }
+      const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+      const { error } = await supabase.from("user_push_tokens").upsert({
+        user_id: session.user.id,
+        expo_push_token: token,
+        platform: Platform.OS,
+        device_id: Device.modelId ?? null,
+        last_seen_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, { onConflict: "expo_push_token" });
+      if (error) throw error;
+      Alert.alert("Push alerts enabled", "This device is registered for Intermarket Strategist notifications. Sound and vibration still follow your phone settings.");
+    } catch (error) {
+      Alert.alert("Could not enable push alerts", error instanceof Error ? error.message : "Please try again later.");
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
   const markRead = async (item: NotificationItem) => {
     if (!supabase || item.read_at) return;
     const readAt = new Date().toISOString();
@@ -178,6 +246,9 @@ export default function App() {
             <View style={styles.infoCard}>
               <Text style={styles.infoTitle}>Your account is connected</Text>
               <Text style={styles.infoBody}>This app uses the same Intermarket Strategist account and secure backend as the website. More native workspaces are being added in stages.</Text>
+              <Pressable style={[styles.pushButton, pushBusy && styles.buttonDisabled]} onPress={() => void enablePushNotifications()} disabled={pushBusy}>
+                {pushBusy ? <ActivityIndicator color="#B7F1FB" /> : <Text style={styles.pushButtonText}>Enable device notifications</Text>}
+              </Pressable>
             </View>
           </>
         ) : (
@@ -328,6 +399,8 @@ const styles = StyleSheet.create({
   infoCard: { marginTop: 18, padding: 16, borderRadius: 15, borderWidth: 1, borderColor: "#28556B", backgroundColor: "#0D2638" },
   infoTitle: { color: "#B7F1FB", fontSize: 12, fontWeight: "700" },
   infoBody: { color: "#9AB1C3", fontSize: 10, lineHeight: 17, marginTop: 6 },
+  pushButton: { alignSelf: "flex-start", marginTop: 13, borderWidth: 1, borderColor: "#32647B", borderRadius: 9, paddingHorizontal: 12, paddingVertical: 9, minWidth: 160, alignItems: "center" },
+  pushButtonText: { color: "#B7F1FB", fontSize: 10, fontWeight: "800" },
   bottomNav: { flexDirection: "row", justifyContent: "space-around", paddingTop: 13, paddingBottom: Platform.OS === "ios" ? 20 : 12, borderTopWidth: 1, borderTopColor: "#1A3045", backgroundColor: "#091625" },
   navItem: { paddingHorizontal: 12, paddingVertical: 5 },
   navText: { color: "#71879C", fontSize: 11, fontWeight: "600" },
