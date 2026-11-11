@@ -188,16 +188,32 @@ export default function App() {
     return () => { active = false; };
   }, [tab, session?.user.id]);
 
+  const navigateFromHref = useCallback((href?: string | null) => {
+    const path = (href || "").toLowerCase();
+    if (path.includes("/messages")) setTab("messages");
+    else if (path.includes("/lounge") || path.includes("/community")) setTab("community");
+    else if (path.includes("/analysis") || path.includes("/research")) setTab("research");
+    else if (path.includes("/setups") || path.includes("/trades")) setTab("ideas");
+    else if (path.includes("/journal")) setTab("journal");
+    else setTab("notifications");
+  }, []);
+
+  const openNotification = async (item: NotificationItem) => {
+    await markRead(item);
+    navigateFromHref(item.href);
+  };
+
   const unreadCount = useMemo(() => notifications.filter((item) => !item.read_at).length, [notifications]);
 
   useEffect(() => {
     if (!session?.user.id) return;
-    const responseListener = Notifications.addNotificationResponseReceivedListener(() => {
-      setTab("notifications");
+    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
+      const href = response.notification.request.content.data?.href;
+      navigateFromHref(typeof href === "string" ? href : null);
       void loadNotifications(session.user.id);
     });
     return () => responseListener.remove();
-  }, [session?.user.id, loadNotifications]);
+  }, [session?.user.id, loadNotifications, navigateFromHref]);
 
   const enablePushNotifications = async () => {
     if (!supabase || !session?.user.id) return;
@@ -346,7 +362,7 @@ export default function App() {
             {!loadingNotifications && notifications.length === 0 && <View style={styles.emptyCard}><Text style={styles.emptyTitle}>You're all caught up</Text><Text style={styles.moduleDetail}>New research, trade publications and relevant member activity will appear here.</Text></View>}
             <View style={styles.notificationList}>
               {notifications.map((item) => (
-                <Pressable key={item.id} style={[styles.notificationCard, !item.read_at && styles.notificationUnread]} onPress={() => void markRead(item)}>
+                <Pressable key={item.id} style={[styles.notificationCard, !item.read_at && styles.notificationUnread]} onPress={() => void openNotification(item)}>
                   <View style={styles.notificationTop}><Text style={styles.notificationTitle}>{item.title}</Text>{!item.read_at && <View style={styles.notificationDot} />}</View>
                   <Text style={styles.notificationBody}>{item.body}</Text>
                   <Text style={styles.notificationDate}>{formatDate(item.created_at)}</Text>
