@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Intermarket Strategist",
+    "name": "AIS — Abdulkadir Intermarket Strategies",
     "slug": "intermarket-strategist",
     "scheme": "intermarketstrategist",
     "version": "0.1.0",
@@ -13,7 +13,8 @@
     "android": {
       "package": "com.intermarketstrategist.app",
       "adaptiveIcon": {
-        "backgroundColor": "#07111F"
+        "backgroundColor": "#061321",
+        "foregroundImage": "./assets/icon.png"
       }
     },
     "plugins": [
@@ -32,6 +33,7 @@
         "projectId": "bfa1bb8d-b37a-496e-b6b3-4880f56b7656"
       }
     },
-    "owner": "giniusox"
+    "owner": "giniusox",
+    "icon": "./assets/icon.png"
   }
 }

@@ -59,6 +59,7 @@ function formatDate(value: string) {
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [welcomeComplete, setWelcomeComplete] = useState(false);
+  const [welcomeComplete, setWelcomeComplete] = useState(false);
   const [booting, setBooting] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tab, setTab] = useState<WorkspaceTab>("home");
@@ -353,6 +354,10 @@ export default function App() {
 
   if (!supabase) {
     return <SafeAreaView style={styles.safe}><StatusBar barStyle="light-content" /><View style={styles.center}><Brand /><Text style={styles.title}>Connect your account</Text><Text style={styles.body}>The mobile build needs its Supabase project URL and public anon key in the app environment before sign-in can be enabled.</Text></View></SafeAreaView>;
+  }
+
+  if (!session && !welcomeComplete) {
+    return <WelcomeScreen onContinue={() => setWelcomeComplete(true)} />;
   }
 
   if (!session) {
@@ -804,6 +809,54 @@ function WelcomeScreen({ onContinue }: { onContinue: () => void }) {
   );
 }
 
+
+function WelcomeScreen({ onContinue }: { onContinue: () => void }) {
+  const bars = [24, 36, 29, 48, 41, 59, 52, 72, 64, 84, 77, 101, 92, 116, 108, 132];
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#061321" }}>
+      <StatusBar barStyle="light-content" backgroundColor="#061321" />
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 18, justifyContent: "space-between" }}>
+        <View>
+          <View style={{ alignItems: "center", marginTop: 10 }}>
+            <View style={{ width: 88, height: 88, borderRadius: 26, backgroundColor: "#0B2A40", borderWidth: 1.5, borderColor: "#36C7E1", alignItems: "center", justifyContent: "center", shadowColor: "#36D9F3", shadowOpacity: 0.3, shadowRadius: 22, elevation: 10 }}>
+              <Text style={{ color: "#8BE8F7", fontSize: 31, fontWeight: "900", letterSpacing: -2 }}>AIS</Text>
+              <View style={{ position: "absolute", width: 75, height: 23, borderTopWidth: 3, borderColor: "#39D5ED", borderRadius: 30, transform: [{ rotate: "-24deg" }], top: 39 }} />
+            </View>
+            <Text style={{ color: "#F1F7FC", fontSize: 14, fontWeight: "900", letterSpacing: 2.1, marginTop: 17 }}>ABDULKADIR</Text>
+            <Text style={{ color: "#F1F7FC", fontSize: 18, fontWeight: "900", letterSpacing: 1.6, marginTop: 3 }}>INTERMARKET</Text>
+            <Text style={{ color: "#54D9ED", fontSize: 15, fontWeight: "800", letterSpacing: 3.5, marginTop: 2 }}>STRATEGIES</Text>
+            <View style={{ flexDirection: "row", gap: 9, marginTop: 17 }}>
+              <View style={{ borderWidth: 1, borderColor: "#126A6C", backgroundColor: "#092C35", borderRadius: 20, paddingHorizontal: 11, paddingVertical: 8 }}><Text style={{ color: "#54E2C1", fontSize: 9, fontWeight: "800" }}>◆ MARKET INTELLIGENCE</Text></View>
+              <View style={{ borderWidth: 1, borderColor: "#17516A", backgroundColor: "#0A263A", borderRadius: 20, paddingHorizontal: 11, paddingVertical: 8 }}><Text style={{ color: "#9AD9EA", fontSize: 9, fontWeight: "800" }}>◎ GLOBAL MARKETS</Text></View>
+            </View>
+          </View>
+          <View style={{ height: 196, marginTop: 27, borderRadius: 23, borderWidth: 1, borderColor: "#16425B", backgroundColor: "#082238", overflow: "hidden", paddingHorizontal: 13, paddingTop: 17, justifyContent: "flex-end" }}>
+            <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, justifyContent: "space-evenly" }}>{[0,1,2,3].map(n => <View key={n} style={{ height: 1, backgroundColor: "#173C53" }} />)}</View>
+            <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: 143, zIndex: 1 }}>
+              {bars.map((height, i) => <View key={i} style={{ width: 7, height, borderRadius: 2, backgroundColor: i % 5 === 2 ? "#F08C72" : "#39D4E9" }} />)}
+            </View>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 11, borderTopWidth: 1, borderTopColor: "#1A4961", marginTop: 9 }}>
+              <Text style={{ color: "#8AB3C9", fontSize: 9, letterSpacing: 0.8 }}>MACRO · FUNDAMENTALS · INTERMARKET</Text>
+              <Text style={{ color: "#57DDF0", fontSize: 9, fontWeight: "800" }}>AIS</Text>
+            </View>
+          </View>
+          <View style={{ marginTop: 28 }}>
+            <Text style={{ color: "#F4F8FC", fontSize: 30, lineHeight: 37, fontWeight: "900", letterSpacing: -0.7 }}>See the bigger picture.</Text>
+            <Text style={{ color: "#A9BED0", fontSize: 14, lineHeight: 22, marginTop: 10 }}>Understand the forces moving global markets. Research smarter. Make decisions with context.</Text>
+          </View>
+        </View>
+        <View style={{ marginTop: 27 }}>
+          <Pressable onPress={onContinue} accessibilityRole="button" style={{ minHeight: 57, borderRadius: 18, backgroundColor: "#76E5F3", alignItems: "center", justifyContent: "center", shadowColor: "#42D9EE", shadowOpacity: 0.22, shadowRadius: 14, elevation: 5 }}>
+            <Text style={{ color: "#061725", fontSize: 14, fontWeight: "900", letterSpacing: 0.8 }}>GET STARTED   ›</Text>
+          </Pressable>
+          <Pressable onPress={onContinue} accessibilityRole="button" style={{ paddingVertical: 19, alignItems: "center" }}>
+            <Text style={{ color: "#AFC3D3", fontSize: 13 }}>Already have an account? <Text style={{ color: "#57DDEC", fontWeight: "800" }}>Sign in</Text></Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
 
 function AuthScreen() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
