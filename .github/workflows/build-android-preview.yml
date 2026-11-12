@@ -88,7 +88,7 @@ jobs:
               npx eas-cli@latest build:view "$BUILD_ID" --json > "$RUNNER_TEMP/eas-build-view.json" 2>&1 || true
               cat "$RUNNER_TEMP/eas-build-view.json" || true
               mkdir -p "$RUNNER_TEMP/eas-diagnostics"
-              node -e "try { const raw=JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP+'/eas-build-view.json','utf8')); const b=Array.isArray(raw)?raw[0]:raw; for (const u of (b?.logFiles||[])) console.log(u); } catch (e) { console.error('Could not parse EAS build log metadata:',e.message); }" > "$RUNNER_TEMP/eas-log-urls.txt"
+              node -e "try { const fs=require('fs'); const text=fs.readFileSync(process.env.RUNNER_TEMP+'/eas-build-view.json','utf8'); const start=text.indexOf('{'); if(start<0) throw new Error('No JSON object found in EAS build:view output'); const raw=JSON.parse(text.slice(start)); const b=Array.isArray(raw)?raw[0]:raw; for (const u of (b?.logFiles||[])) console.log(u); } catch (e) { console.error('Could not parse EAS build log metadata:',e.message); }" > "$RUNNER_TEMP/eas-log-urls.txt"
               echo "Expo log URL count: $(wc -l < "$RUNNER_TEMP/eas-log-urls.txt")"
               LOG_INDEX=0
               while IFS= read -r LOG_URL; do
