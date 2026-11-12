@@ -44,6 +44,15 @@ jobs:
         working-directory: mobile
         run: npm run typecheck
 
+      - name: Verify Expo build credentials are available
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::The EXPO_TOKEN repository secret is missing or unavailable to this workflow."
+            exit 1
+          fi
+
       - name: Create or link the Expo project
         working-directory: mobile
         env:
