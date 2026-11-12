@@ -84,12 +84,24 @@ jobs:
             BUILD_ID="$(node -e "try { const fs=require('fs'); const data=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const build=Array.isArray(data)?data[0]:data; if (build && build.id) process.stdout.write(build.id); } catch {}")"
             if [ -n "$BUILD_ID" ]; then
               echo "Failed EAS build ID: $BUILD_ID"
-              npx eas-cli@latest build:view "$BUILD_ID" --json || true
+              npx eas-cli@latest build:view "$BUILD_ID" --json > "$RUNNER_TEMP/eas-build-view.json" || true
+              cat "$RUNNER_TEMP/eas-build-view.json" || true
               mkdir -p "$RUNNER_TEMP/eas-diagnostics"
-              cd "$RUNNER_TEMP/eas-diagnostics"
-              npx eas-cli@latest build:download --build-id "$BUILD_ID" --all-artifacts || true
+              node -e "try { const b=JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP+'/eas-build-view.json','utf8')); for (const u of (b.logFiles||[])) console.log(u); } catch {}" > "$RUNNER_TEMP/eas-log-urls.txt"
+              LOG_INDEX=0
+              while IFS= read -r LOG_URL; do
+                [ -n "$LOG_URL" ] || continue
+                LOG_INDEX=$((LOG_INDEX+1))
+                echo "===== Expo build log $LOG_INDEX ====="
+                curl --fail --location --silent --show-error "$LOG_URL" -o "$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt" || true
+                if [ -s "$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt" ]; then
+                  cat "$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt"
+                else
+                  echo "Could not retrieve this Expo build log."
+                fi
+              done < "$RUNNER_TEMP/eas-log-urls.txt"
               echo "Available diagnostic files:"
-              find . -maxdepth 4 -type f -printf '%p (%s bytes)\\n' || true
+              find "$RUNNER_TEMP/eas-diagnostics" -maxdepth 2 -type f -printf '%p (%s bytes)\\n' || true
             else
               echo "No build ID was recovered. Raw EAS CLI output follows:"
               cat "$GITHUB_WORKSPACE/mobile/eas-build.json" || true
