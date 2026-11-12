@@ -1,4 +1,4 @@
-name: Build Intermarket Strategist Android APK
+name: Build AIS Android Production App Bundle
 
 on:
   workflow_dispatch:
@@ -69,14 +69,14 @@ jobs:
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
 
-      - name: Build Android preview APK
+      - name: Build AIS production Android App Bundle
         id: eas_build
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set +e
-          npx eas-cli@latest build --platform android --profile preview --non-interactive --wait --json 2>&1 | tee eas-build-output.log
+          npx eas-cli@latest build --platform android --profile production --non-interactive --wait --json 2>&1 | tee eas-build-output.log
           BUILD_EXIT=${PIPESTATUS[0]}
           set -e
           if [ "$BUILD_EXIT" -ne 0 ]; then
@@ -137,7 +137,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Download the completed APK
+      - name: Download the completed production AAB
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -145,30 +145,29 @@ jobs:
           BUILD_ID=$(node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const build=Array.isArray(data)?data[0]:data; if (!build || !build.id) { console.error('EAS build response did not contain a build ID'); process.exit(1); } process.stdout.write(build.id);")
           echo "Downloading completed EAS build: $BUILD_ID"
           npx eas-cli@latest build:download --build-id "$BUILD_ID"
-          APK_PATH="$(find /tmp/runner/eas-cli-nodejs/eas-build-run-cache -maxdepth 1 -type f -name "*${BUILD_ID}.apk" -print -quit)"
-          if [ -z "$APK_PATH" ] || [ ! -s "$APK_PATH" ]; then
-            echo "::error::The completed EAS APK was not found in the EAS download cache."
+          AAB_PATH="$(find /tmp/runner/eas-cli-nodejs/eas-build-run-cache -maxdepth 1 -type f -name "*${BUILD_ID}.aab" -print -quit)"
+          if [ -z "$AAB_PATH" ] || [ ! -s "$AAB_PATH" ]; then
+            echo "::error::The completed production AAB was not found in the EAS download cache."
             find /tmp/runner/eas-cli-nodejs/eas-build-run-cache -maxdepth 1 -type f -print || true
             exit 1
           fi
-          cp "$APK_PATH" "$GITHUB_WORKSPACE/intermarket-strategist-android.apk"
-          ls -lh "$GITHUB_WORKSPACE/intermarket-strategist-android.apk"
+          cp "$AAB_PATH" "$GITHUB_WORKSPACE/ais-android-production.aab"
+          ls -lh "$GITHUB_WORKSPACE/ais-android-production.aab"
 
-      - name: Upload APK as a workflow artifact
+      - name: Upload AIS production AAB as a workflow artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: intermarket-strategist-android-apk
-          path: intermarket-strategist-android.apk
+          name: ais-android-production-aab
+          path: ais-android-production.aab
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish permanent preview download
+      - name: Publish production build download
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="android-preview-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" intermarket-strategist-android.apk \
+          TAG="ais-android-production-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" ais-android-production.aab \
             --repo "$GITHUB_REPOSITORY" \
-            --title "Intermarket Strategist Android Preview ${GITHUB_RUN_NUMBER}" \
-            --notes "Preview APK build from commit ${GITHUB_SHA}. This is a beta preview, not a Play Store release." \
-            --prerelease
+            --title "AIS Android Production Build ${GITHUB_RUN_NUMBER}" \
+            --notes "Production Android App Bundle for Abdulkadir Intermarket Strategies. This AAB is intended for Google Play Console submission; it is not an APK for direct installation."
