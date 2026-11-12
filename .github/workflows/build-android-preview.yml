@@ -2,6 +2,12 @@ name: Build Intermarket Strategist Android APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/native-app-entry-and-foundation-2026-11-11
+    paths:
+      - '.github/workflows/build-android-preview.yml'
+      - 'mobile/**'
 
 permissions:
   contents: write
@@ -12,6 +18,7 @@ concurrency:
 
 jobs:
   build-android:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
