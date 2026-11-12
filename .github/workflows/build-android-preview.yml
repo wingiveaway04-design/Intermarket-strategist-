@@ -70,10 +70,32 @@ jobs:
           fi
 
       - name: Build Android preview APK
+        id: eas_build
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas-cli@latest build --platform android --profile preview --non-interactive --wait --json > eas-build.json
+        run: |
+          set +e
+          npx eas-cli@latest build --platform android --profile preview --non-interactive --wait --verbose-logs --json > eas-build.json
+          BUILD_EXIT=$?
+          set -e
+          if [ "$BUILD_EXIT" -ne 0 ]; then
+            echo "::error::Expo Android build failed. Collecting build metadata and available diagnostic artifacts."
+            BUILD_ID="$(node -e "try { const fs=require('fs'); const data=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const build=Array.isArray(data)?data[0]:data; if (build && build.id) process.stdout.write(build.id); } catch {}")"
+            if [ -n "$BUILD_ID" ]; then
+              echo "Failed EAS build ID: $BUILD_ID"
+              npx eas-cli@latest build:view "$BUILD_ID" --json || true
+              mkdir -p "$RUNNER_TEMP/eas-diagnostics"
+              cd "$RUNNER_TEMP/eas-diagnostics"
+              npx eas-cli@latest build:download --build-id "$BUILD_ID" --all-artifacts || true
+              echo "Available diagnostic files:"
+              find . -maxdepth 4 -type f -printf '%p (%s bytes)\\n' || true
+            else
+              echo "No build ID was recovered. Raw EAS CLI output follows:"
+              cat "$GITHUB_WORKSPACE/mobile/eas-build.json" || true
+            fi
+            exit "$BUILD_EXIT"
+          fi
 
       - name: Download the completed APK
         working-directory: mobile
