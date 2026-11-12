@@ -76,7 +76,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set +e
-          npx eas-cli@latest build --platform android --profile preview --non-interactive --wait --verbose-logs --json > eas-build.json
+          npx eas-cli@latest build --platform android --profile preview --non-interactive --wait --verbose-logs --json > eas-build.json 2> eas-build-stderr.log
           BUILD_EXIT=$?
           set -e
           if [ "$BUILD_EXIT" -ne 0 ]; then
@@ -101,7 +101,7 @@ jobs:
                     unzip -l "$LOG_FILE"
                     unzip -oq "$LOG_FILE" -d "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX"
                     find "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX" -type f -maxdepth 5 -print
-                    find "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX" -type f -maxdepth 5 -exec sh -c 'echo "===== $1 ====="; tail -n 400 "$1"' _ {} \\
+                    find "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX" -maxdepth 5 -type f -exec sh -c 'echo "===== $1 ====="; tail -n 400 "$1"' _ {} \;
                   else
                     cat "$LOG_FILE"
                   fi
@@ -109,6 +109,10 @@ jobs:
                   echo "Could not retrieve this Expo build log."
                 fi
               done < "$RUNNER_TEMP/eas-log-urls.txt"
+              if [ -f "$GITHUB_WORKSPACE/mobile/eas-build-stderr.log" ]; then
+                echo "===== EAS CLI stderr ====="
+                cat "$GITHUB_WORKSPACE/mobile/eas-build-stderr.log"
+              fi
               echo "Available diagnostic files:"
               find "$RUNNER_TEMP/eas-diagnostics" -maxdepth 2 -type f -printf '%p (%s bytes)\\n' || true
             else
