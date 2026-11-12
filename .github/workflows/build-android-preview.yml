@@ -76,15 +76,16 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set +e
-          npx eas-cli@latest build --platform android --profile preview --non-interactive --wait --verbose-logs --json > eas-build.json 2> eas-build-stderr.log
-          BUILD_EXIT=$?
+          npx eas-cli@latest build --platform android --profile preview --non-interactive --wait --json 2>&1 | tee eas-build-output.log
+          BUILD_EXIT=${PIPESTATUS[0]}
           set -e
           if [ "$BUILD_EXIT" -ne 0 ]; then
-            echo "::error::Expo Android build failed. Collecting build metadata and available diagnostic artifacts."
-            BUILD_ID="$(node -e "try { const fs=require('fs'); const data=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const build=Array.isArray(data)?data[0]:data; if (build && build.id) process.stdout.write(build.id); } catch {}")"
+            echo "::error::Expo Android build failed. Full EAS CLI output follows."
+            cat eas-build-output.log || true
+            BUILD_ID="$(node -e "try { const fs=require('fs'); const raw=fs.readFileSync('eas-build-output.log','utf8'); const match=raw.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i); if(match) process.stdout.write(match[0]); else { const data=JSON.parse(raw); const build=Array.isArray(data)?data[0]:data; if(build&&build.id) process.stdout.write(build.id); } } catch {}")"
             if [ -n "$BUILD_ID" ]; then
-              echo "Failed EAS build ID: $BUILD_ID"
-              npx eas-cli@latest build:view "$BUILD_ID" --json > "$RUNNER_TEMP/eas-build-view.json" || true
+              echo "Recovered EAS build ID: $BUILD_ID"
+              npx eas-cli@latest build:view "$BUILD_ID" --json > "$RUNNER_TEMP/eas-build-view.json" 2>&1 || true
               cat "$RUNNER_TEMP/eas-build-view.json" || true
               mkdir -p "$RUNNER_TEMP/eas-diagnostics"
               node -e "try { const b=JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP+'/eas-build-view.json','utf8')); for (const u of (b.logFiles||[])) console.log(u); } catch {}" > "$RUNNER_TEMP/eas-log-urls.txt"
@@ -92,36 +93,23 @@ jobs:
               while IFS= read -r LOG_URL; do
                 [ -n "$LOG_URL" ] || continue
                 LOG_INDEX=$((LOG_INDEX+1))
-                echo "===== Expo build log $LOG_INDEX ====="
                 curl --fail --location --silent --show-error "$LOG_URL" -o "$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt" || true
                 if [ -s "$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt" ]; then
                   LOG_FILE="$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt"
                   if unzip -t "$LOG_FILE" >/dev/null 2>&1; then
-                    echo "Expo returned a ZIP archive; extracting readable build logs:"
-                    unzip -l "$LOG_FILE"
                     unzip -oq "$LOG_FILE" -d "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX"
-                    find "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX" -type f -maxdepth 5 -print
                     find "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX" -maxdepth 5 -type f -exec sh -c 'echo "===== $1 ====="; tail -n 400 "$1"' _ {} \;
                   else
                     cat "$LOG_FILE"
                   fi
-                else
-                  echo "Could not retrieve this Expo build log."
                 fi
               done < "$RUNNER_TEMP/eas-log-urls.txt"
-              if [ -f "$GITHUB_WORKSPACE/mobile/eas-build-stderr.log" ]; then
-                echo "===== EAS CLI stderr ====="
-                cat "$GITHUB_WORKSPACE/mobile/eas-build-stderr.log"
-              fi
-              echo "Available diagnostic files:"
-              find "$RUNNER_TEMP/eas-diagnostics" -maxdepth 2 -type f -printf '%p (%s bytes)\\n' || true
             else
-              echo "No build ID was recovered. Raw EAS CLI output follows:"
-              cat "$GITHUB_WORKSPACE/mobile/eas-build.json" || true
+              echo "No EAS build ID was present in the captured output."
             fi
             exit "$BUILD_EXIT"
           fi
-
+          cp eas-build-output.log eas-build.json
       - name: Preserve Expo diagnostics on failure
         if: always()
         run: |
