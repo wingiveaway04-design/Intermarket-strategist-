@@ -9,6 +9,9 @@ const features = [
 ];
 
 export default function GetTheAppPage() {
+  const androidDownloadUrl = process.env.NEXT_PUBLIC_ANDROID_APK_URL;
+  const iosTestFlightUrl = process.env.NEXT_PUBLIC_IOS_TESTFLIGHT_URL;
+
   return (
     <main className="min-h-screen bg-[#07111f] text-slate-100">
       <header className="border-b border-white/[.08] bg-[#07111f]/90 px-5 py-4">
@@ -28,11 +31,29 @@ export default function GetTheAppPage() {
             <p className="inline-flex rounded-full border border-cyan-300/20 bg-cyan-300/[.07] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.2em] text-cyan-200">The mobile experience</p>
             <h1 className="mt-6 max-w-2xl text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl">Your market intelligence. <span className="text-cyan-300">Wherever you go.</span></h1>
             <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">The Intermarket Strategist mobile app is in development for Android and iPhone. Research, trade ideas, your private journal and member conversations will come together in one native experience.</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <span className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[.08] px-5 py-3 text-sm font-semibold text-cyan-100"><span aria-hidden="true">◉</span> Android · Coming soon</span>
-              <span className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[.04] px-5 py-3 text-sm font-semibold text-slate-200"><span aria-hidden="true">●</span> iPhone · Coming soon</span>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/[.06] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[.18em] text-cyan-200">Android</p>
+                <h2 className="mt-2 text-sm font-semibold text-white">Direct APK download</h2>
+                <p className="mt-1 text-xs leading-5 text-slate-400">Install the verified beta directly from this website. Android may ask you to allow installation from your browser.</p>
+                {androidDownloadUrl ? (
+                  <a href={androidDownloadUrl} className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-cyan-200 px-4 py-3 text-sm font-bold text-[#07111f] hover:bg-cyan-100" download>Download for Android</a>
+                ) : (
+                  <span aria-disabled="true" className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/20 px-4 py-3 text-sm font-semibold text-cyan-100/70">Android beta · Build in progress</span>
+                )}
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[.035] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[.18em] text-slate-300">iPhone & iPad</p>
+                <h2 className="mt-2 text-sm font-semibold text-white">Apple TestFlight</h2>
+                <p className="mt-1 text-xs leading-5 text-slate-400">Join the iOS beta through Apple TestFlight. An Apple-signed build is required before this link can be activated.</p>
+                {iosTestFlightUrl ? (
+                  <a href={iosTestFlightUrl} className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/[.06] px-4 py-3 text-sm font-semibold text-white hover:bg-white/10">Install on iPhone</a>
+                ) : (
+                  <span aria-disabled="true" className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300">iOS beta · TestFlight setup pending</span>
+                )}
+              </div>
             </div>
-            <p className="mt-4 text-xs leading-5 text-slate-500">The download buttons will become active when signed test builds are ready. No unofficial or placeholder downloads.</p>
+            <p className="mt-4 text-xs leading-5 text-slate-500">These links activate only when the corresponding signed build is ready. Official Play Store and App Store releases will follow after testing.</p>
           </div>
 
           <div className="mx-auto w-full max-w-sm rounded-[30px] border border-cyan-200/20 bg-[#0b1b2d] p-3 shadow-2xl shadow-cyan-950/30">
