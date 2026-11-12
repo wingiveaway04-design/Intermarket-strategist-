@@ -83,11 +83,19 @@ jobs:
           BUILD_ID=$(node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const build=Array.isArray(data)?data[0]:data; if (!build || !build.id) { console.error('EAS build response did not contain a build ID'); process.exit(1); } process.stdout.write(build.id);")
           echo "Downloading completed EAS build: $BUILD_ID"
           npx eas-cli@latest build:download --build-id "$BUILD_ID"
+          APK_PATH="$(find /tmp/runner/eas-cli-nodejs/eas-build-run-cache -maxdepth 1 -type f -name "*${BUILD_ID}.apk" -print -quit)"
+          if [ -z "$APK_PATH" ] || [ ! -s "$APK_PATH" ]; then
+            echo "::error::The completed EAS APK was not found in the EAS download cache."
+            find /tmp/runner/eas-cli-nodejs/eas-build-run-cache -maxdepth 1 -type f -print || true
+            exit 1
+          fi
+          cp "$APK_PATH" "$GITHUB_WORKSPACE/intermarket-strategist-android.apk"
+          ls -lh "$GITHUB_WORKSPACE/intermarket-strategist-android.apk"
 
       - name: Upload APK as a workflow artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: intermarket-strategist-android-apk
-          path: mobile/*.apk
+          path: intermarket-strategist-android.apk
           if-no-files-found: error
           retention-days: 14
