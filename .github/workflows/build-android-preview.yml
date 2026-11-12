@@ -99,3 +99,14 @@ jobs:
           path: intermarket-strategist-android.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish permanent preview download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="android-preview-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" intermarket-strategist-android.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Intermarket Strategist Android Preview ${GITHUB_RUN_NUMBER}" \
+            --notes "Preview APK build from commit ${GITHUB_SHA}. This is a beta preview, not a Play Store release." \
+            --prerelease
