@@ -145,14 +145,35 @@ export default function App() {
   }, [session?.user.id]);
 
   useEffect(() => {
-    if (!supabase || !session?.user.id || tab === "home" || tab === "notifications") return;
+    if (!supabase || !session?.user.id || tab === "notifications") return;
     const client = supabase;
     let active = true;
     const loadModule = async () => {
       setModuleLoading(true);
       setModuleError(null);
       try {
-        if (tab === "research") {
+        if (tab === "home") {
+          const [researchResult, ideasResult] = await Promise.all([
+            client
+              .from("analysis_articles")
+              .select("id,title,excerpt,category,published_at,is_premium_only")
+              .eq("content_state", "published")
+              .order("published_at", { ascending: false })
+              .limit(12),
+            client
+              .from("public_trades")
+              .select("id,instrument,market,direction,status,entry_price,stop_loss,thesis,published_at")
+              .eq("content_state", "published")
+              .order("published_at", { ascending: false })
+              .limit(12)
+          ]);
+          if (researchResult.error) throw researchResult.error;
+          if (ideasResult.error) throw ideasResult.error;
+          if (active) {
+            setResearchItems((researchResult.data ?? []) as ResearchItem[]);
+            setTradeIdeas((ideasResult.data ?? []) as TradeIdea[]);
+          }
+        } else if (tab === "research") {
           const { data, error } = await client
             .from("analysis_articles")
             .select("id,title,excerpt,category,published_at,is_premium_only")
@@ -206,6 +227,24 @@ export default function App() {
   };
 
   const unreadCount = useMemo(() => notifications.filter((item) => !item.read_at).length, [notifications]);
+  const activityFeed = useMemo(() => [
+    ...researchItems.map((item) => ({
+      id: "research-" + item.id,
+      kind: "research" as const,
+      title: item.title,
+      detail: item.excerpt || "Open the Research Desk to read the full publication.",
+      label: item.category.replaceAll("_", " "),
+      date: item.published_at
+    })),
+    ...tradeIdeas.map((item) => ({
+      id: "idea-" + item.id,
+      kind: "idea" as const,
+      title: item.instrument,
+      detail: item.thesis || (item.market + " · " + item.direction + " trade idea"),
+      label: item.market + " · " + item.direction,
+      date: item.published_at
+    }))
+  ].sort((a, b) => Date.parse(b.date || "") - Date.parse(a.date || "")).slice(0, 6), [researchItems, tradeIdeas]);
 
   useEffect(() => {
     if (!session?.user.id) return;
@@ -334,18 +373,40 @@ export default function App() {
               <Text style={styles.body}>Your research, trade ideas and trading workspace — connected in one secure mobile experience.</Text>
               <View style={styles.sessionPill}><View style={styles.onlineDot} /><Text style={styles.sessionText}>Signed in as @{profile?.username ?? session.user.email}</Text></View>
             </View>
-            <SectionTitle title="YOUR WORKSPACE" meta="MEMBER ACCESS" />
-            <View style={styles.moduleList}>
-              {webModules.map((item) => (
-                <Pressable key={item.number} style={styles.moduleCard} onPress={() => {
-                  if (item.screen) setTab(item.screen);
-                  else Alert.alert(item.title, "This native workspace is scheduled for the next development stage.");
-                }}>
-                  <Text style={styles.moduleNumber}>{item.number}</Text>
-                  <View style={styles.moduleCopy}><Text style={styles.moduleTitle}>{item.title}</Text><Text style={styles.moduleDetail}>{item.detail}</Text></View>
-                  <Text style={styles.moduleArrow}>›</Text>
+            <View style={styles.activitySection}>
+              <SectionTitle title="LATEST ACTIVITY" meta="RESEARCH & TRADE IDEAS" />
+              {moduleLoading && <ActivityIndicator color="#75DDF1" style={{ marginVertical: 18 }} />}
+              {!moduleLoading && moduleError && <View style={styles.emptyCard}><Text style={styles.emptyTitle}>Activity feed unavailable</Text><Text style={styles.moduleDetail}>{moduleError}</Text></View>}
+              {!moduleLoading && !moduleError && activityFeed.length === 0 && <EmptyState title="No new publications yet" detail="New research and official trade ideas will appear here as soon as they are published." />}
+              {!moduleLoading && !moduleError && activityFeed.map((item) => (
+                <Pressable key={item.id} style={styles.activityCard} onPress={() => setTab(item.kind === "research" ? "research" : "ideas")}>
+                  <View style={styles.activityTop}>
+                    <Text style={[styles.activityType, item.kind === "idea" && styles.activityTypeIdea]}>{item.kind === "research" ? "RESEARCH PUBLICATION" : "TRADE IDEA"}</Text>
+                    {!!item.date && <Text style={styles.activityDate}>{formatDate(item.date)}</Text>}
+                  </View>
+                  <Text style={styles.activityTitle}>{item.title}</Text>
+                  <Text style={styles.activityDetail} numberOfLines={2}>{item.detail}</Text>
+                  <View style={styles.activityFooter}>
+                    <Text style={styles.activityLabel}>{item.label.toUpperCase()}</Text>
+                    <Text style={styles.activityOpen}>OPEN  ›</Text>
+                  </View>
                 </Pressable>
               ))}
+            </View>
+            <View style={styles.workspaceSection}>
+              <SectionTitle title="YOUR WORKSPACE" meta="QUICK ACCESS" />
+              <View style={styles.moduleGrid}>
+                {webModules.map((item) => (
+                  <Pressable key={item.number} style={styles.moduleCard} onPress={() => {
+                    if (item.screen) setTab(item.screen);
+                    else Alert.alert(item.title, "This native workspace is scheduled for the next development stage.");
+                  }}>
+                    <Text style={styles.moduleNumber}>{item.number}</Text>
+                    <View style={styles.moduleCopy}><Text style={styles.moduleTitle}>{item.title}</Text><Text style={styles.moduleDetail}>{item.detail}</Text></View>
+                    <Text style={styles.moduleArrow}>›</Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
             <View style={styles.infoCard}>
               <Text style={styles.infoTitle}>Your account is connected</Text>
@@ -803,8 +864,21 @@ const styles = StyleSheet.create({
   sectionHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   sectionTitle: { color: "#DDE9F5", fontSize: 10, fontWeight: "800", letterSpacing: 1.4 },
   sectionMeta: { color: "#6E849B", fontSize: 8, letterSpacing: 1 },
+  activitySection: { marginTop: 2, marginBottom: 24 },
+  activityCard: { borderRadius: 15, borderWidth: 1, borderColor: "#1B344B", backgroundColor: "#0C1C2D", padding: 15, marginBottom: 9 },
+  activityTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  activityType: { color: "#67DDF3", fontSize: 8, fontWeight: "900", letterSpacing: 1 },
+  activityTypeIdea: { color: "#E8B66A" },
+  activityDate: { color: "#647D94", fontSize: 8 },
+  activityTitle: { color: "#EAF2FF", fontSize: 15, fontWeight: "800", marginTop: 10 },
+  activityDetail: { color: "#9AAFC2", fontSize: 11, lineHeight: 17, marginTop: 6 },
+  activityFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: "#1A3045", marginTop: 12, paddingTop: 10 },
+  activityLabel: { color: "#71879C", fontSize: 8, fontWeight: "800", letterSpacing: 0.8, flex: 1 },
+  activityOpen: { color: "#8BE8F7", fontSize: 9, fontWeight: "900" },
+  workspaceSection: { marginBottom: 18 },
+  moduleGrid: { gap: 8 },
   moduleList: { gap: 9 },
-  moduleCard: { flexDirection: "row", alignItems: "center", minHeight: 72, borderRadius: 15, borderWidth: 1, borderColor: "#1B344B", backgroundColor: "#0C1C2D", paddingHorizontal: 14, paddingVertical: 12 },
+  moduleCard: { flexDirection: "row", alignItems: "center", minHeight: 66, borderRadius: 14, borderWidth: 1, borderColor: "#1B344B", backgroundColor: "#0C1C2D", paddingHorizontal: 13, paddingVertical: 10 },
   moduleNumber: { color: "#5BCBE6", fontSize: 10, fontWeight: "800", width: 32 },
   moduleCopy: { flex: 1 },
   moduleTitle: { color: "#EDF4FB", fontSize: 13, fontWeight: "700" },
