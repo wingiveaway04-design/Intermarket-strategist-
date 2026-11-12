@@ -118,6 +118,32 @@ jobs:
             exit "$BUILD_EXIT"
           fi
 
+      - name: Preserve Expo diagnostics on failure
+        if: always()
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/eas-diagnostics"
+          if [ -f "$RUNNER_TEMP/eas-build-view.json" ]; then
+            cp "$RUNNER_TEMP/eas-build-view.json" "$GITHUB_WORKSPACE/eas-diagnostics/" || true
+          fi
+          if [ -f "$RUNNER_TEMP/eas-log-urls.txt" ]; then
+            cp "$RUNNER_TEMP/eas-log-urls.txt" "$GITHUB_WORKSPACE/eas-diagnostics/" || true
+          fi
+          if [ -d "$RUNNER_TEMP/eas-diagnostics" ]; then
+            cp -R "$RUNNER_TEMP/eas-diagnostics/." "$GITHUB_WORKSPACE/eas-diagnostics/" || true
+          fi
+          if [ -f "$GITHUB_WORKSPACE/mobile/eas-build.json" ]; then
+            cp "$GITHUB_WORKSPACE/mobile/eas-build.json" "$GITHUB_WORKSPACE/eas-diagnostics/" || true
+          fi
+
+      - name: Upload Expo diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: expo-android-diagnostics
+          path: eas-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Download the completed APK
         working-directory: mobile
         env:
