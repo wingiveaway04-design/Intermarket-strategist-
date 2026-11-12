@@ -132,7 +132,8 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase || !session?.user.id) return;
-    const channel = supabase
+    const client = supabase;
+    const channel = client
       .channel(`mobile-notifications-${session.user.id}`)
       .on(
         "postgres_changes",
@@ -140,18 +141,19 @@ export default function App() {
         (payload) => setNotifications((current) => [payload.new as NotificationItem, ...current].slice(0, 60))
       )
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => { void client.removeChannel(channel); };
   }, [session?.user.id]);
 
   useEffect(() => {
     if (!supabase || !session?.user.id || tab === "home" || tab === "notifications") return;
+    const client = supabase;
     let active = true;
     const loadModule = async () => {
       setModuleLoading(true);
       setModuleError(null);
       try {
         if (tab === "research") {
-          const { data, error } = await supabase
+          const { data, error } = await client
             .from("analysis_articles")
             .select("id,title,excerpt,category,published_at,is_premium_only")
             .eq("content_state", "published")
@@ -160,7 +162,7 @@ export default function App() {
           if (error) throw error;
           if (active) setResearchItems((data ?? []) as ResearchItem[]);
         } else if (tab === "ideas") {
-          const { data, error } = await supabase
+          const { data, error } = await client
             .from("public_trades")
             .select("id,instrument,market,direction,status,entry_price,stop_loss,thesis,published_at")
             .eq("content_state", "published")
@@ -169,7 +171,7 @@ export default function App() {
           if (error) throw error;
           if (active) setTradeIdeas((data ?? []) as TradeIdea[]);
         } else if (tab === "journal") {
-          const { data, error } = await supabase
+          const { data, error } = await client
             .from("private_trades")
             .select("id,instrument,market,direction,status,entry_price,stop_loss,thesis,opened_at,closed_at,realized_r,created_at")
             .eq("owner_id", session.user.id)
@@ -315,7 +317,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#07111F" />
+      <StatusBar barStyle="light-content" />
       <View style={styles.topbar}>
         <Brand />
         <Pressable style={styles.bellButton} onPress={() => { setTab("notifications"); void loadNotifications(session.user.id); }} accessibilityRole="button" accessibilityLabel={`Notifications, ${unreadCount} unread`}>
@@ -477,10 +479,11 @@ function CommunityScreen({ userId, onBack }: { userId: string; onBack: () => voi
   useEffect(() => {
     void load();
     if (!supabase) return;
-    const channel = supabase.channel("mobile-premium-lounge")
+    const client = supabase;
+    const channel = client.channel("mobile-premium-lounge")
       .on("postgres_changes", { event: "*", schema: "public", table: "premium_chat_messages" }, () => { void load(); })
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => { void client.removeChannel(channel); };
   }, [load]);
 
   const send = async () => {
@@ -610,15 +613,16 @@ function DirectMessagesScreen({ userId, isAdmin, onBack }: { userId: string; isA
 
   useEffect(() => {
     if (!selected || !supabase) return;
+    const client = supabase;
     void loadMessages(selected.id);
-    const channel = supabase.channel("mobile-dm-" + selected.id)
+    const channel = client.channel("mobile-dm-" + selected.id)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "premium_direct_messages", filter: "conversation_id=eq." + selected.id }, (payload) => {
         const next = payload.new as DirectMessage;
         setMessages((current) => current.some((item) => item.id === next.id) ? current : [...current, next]);
         void loadConversations();
       })
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => { void client.removeChannel(channel); };
   }, [selected?.id, loadMessages, loadConversations]);
 
   const send = async () => {
@@ -727,7 +731,7 @@ function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#07111F" />
+      <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView style={styles.authKeyboard} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.authContent} keyboardShouldPersistTaps="handled">
           <Brand />
