@@ -72,7 +72,7 @@ export default function App() {
     return () => subscription.remove();
   }, [canGoBack]);
 
-  const retry = useCallback(() => {
+  const retry = useCallback((): void => {
     setError(null);
     setLoading(true);
     setProgress(0);
@@ -134,8 +134,8 @@ export default function App() {
               setError(`The AIS website is temporarily unavailable (HTTP ${nativeEvent.statusCode}).`);
             }
           }}
-          onContentProcessDidTerminate={() => retry()}
-          onRenderProcessGone={() => retry()}
+          onContentProcessDidTerminate={retry}
+          onRenderProcessGone={retry}
           onMessage={() => undefined}
           webviewDebuggingEnabled={__DEV__}
         />
