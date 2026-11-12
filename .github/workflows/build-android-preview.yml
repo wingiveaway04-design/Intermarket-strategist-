@@ -73,13 +73,16 @@ jobs:
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas-cli@latest build --platform android --profile preview --non-interactive --wait
+        run: npx eas-cli@latest build --platform android --profile preview --non-interactive --wait --json > eas-build.json
 
       - name: Download the completed APK
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas-cli@latest build:download --platform android
+        run: |
+          BUILD_ID=$(node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const build=Array.isArray(data)?data[0]:data; if (!build || !build.id) { console.error('EAS build response did not contain a build ID'); process.exit(1); } process.stdout.write(build.id);")
+          echo "Downloading completed EAS build: $BUILD_ID"
+          npx eas-cli@latest build:download --build-id "$BUILD_ID" --platform android
 
       - name: Upload APK as a workflow artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
