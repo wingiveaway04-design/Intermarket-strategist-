@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ComponentType } from "react";
 import {
   ActivityIndicator,
   BackHandler,
@@ -9,7 +10,7 @@ import {
   Text,
   View
 } from "react-native";
-import { WebView, type WebViewNavigation } from "react-native-webview";
+import { WebView } from "react-native-webview";
 
 const WEBSITE_URL = "https://intermarket-strategist.vercel.app";
 const BRAND = "ABDULKADIR INTERMARKET STRATEGIES";
@@ -48,14 +49,15 @@ function LaunchScreen({ message }: { message: string }) {
 }
 
 export default function App() {
-  const webView = useRef<WebView>(null);
+  const webView = useRef<any>(null);
+  const NativeWebView = WebView as unknown as ComponentType<any>;
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const handleNavigation = useCallback((navigation: WebViewNavigation) => {
+  const handleNavigation = useCallback((navigation: { canGoBack: boolean }) => {
     setCanGoBack(navigation.canGoBack);
   }, []);
 
@@ -114,7 +116,7 @@ export default function App() {
           injectedJavaScriptBeforeContentLoaded={WEBSITE_BRIDGE}
           onNavigationStateChange={handleNavigation}
           onShouldStartLoadWithRequest={handleNavigationRequest}
-          onLoadProgress={({ nativeEvent }) => setProgress(nativeEvent.progress)}
+          onLoadProgress={({ nativeEvent }: { nativeEvent: { progress: number } }) => setProgress(nativeEvent.progress)}
           onLoadStart={() => {
             setLoading(true);
             setError(null);
@@ -123,11 +125,11 @@ export default function App() {
             setLoading(false);
             setProgress(1);
           }}
-          onError={({ nativeEvent }) => {
+          onError={({ nativeEvent }: { nativeEvent: { description?: string } }) => {
             setLoading(false);
             setError(nativeEvent.description || "Unable to connect to the AIS website.");
           }}
-          onHttpError={({ nativeEvent }) => {
+          onHttpError={({ nativeEvent }: { nativeEvent: { statusCode: number } }) => {
             if (nativeEvent.statusCode >= 500) {
               setError(`The AIS website is temporarily unavailable (HTTP ${nativeEvent.statusCode}).`);
             }
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
   progressTrack: { height: 2, width: "100%", backgroundColor: "#10283a" },
   progressBar: { height: 2, backgroundColor: "#79E3F5" },
   launch: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 5,
     alignItems: "center",
     justifyContent: "center",
