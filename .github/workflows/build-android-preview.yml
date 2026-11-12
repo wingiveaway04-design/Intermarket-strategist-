@@ -95,7 +95,16 @@ jobs:
                 echo "===== Expo build log $LOG_INDEX ====="
                 curl --fail --location --silent --show-error "$LOG_URL" -o "$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt" || true
                 if [ -s "$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt" ]; then
-                  cat "$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt"
+                  LOG_FILE="$RUNNER_TEMP/eas-diagnostics/build-log-$LOG_INDEX.txt"
+                  if unzip -t "$LOG_FILE" >/dev/null 2>&1; then
+                    echo "Expo returned a ZIP archive; extracting readable build logs:"
+                    unzip -l "$LOG_FILE"
+                    unzip -oq "$LOG_FILE" -d "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX"
+                    find "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX" -type f -maxdepth 5 -print
+                    find "$RUNNER_TEMP/eas-diagnostics/extracted-$LOG_INDEX" -type f -maxdepth 5 -exec sh -c 'echo "===== $1 ====="; tail -n 400 "$1"' _ {} \\
+                  else
+                    cat "$LOG_FILE"
+                  fi
                 else
                   echo "Could not retrieve this Expo build log."
                 fi
