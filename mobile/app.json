@@ -26,6 +26,12 @@
         }
       ],
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bfa1bb8d-b37a-496e-b6b3-4880f56b7656"
+      }
+    },
+    "owner": "giniusox"
   }
 }
