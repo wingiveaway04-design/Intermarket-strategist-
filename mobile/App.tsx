@@ -136,7 +136,6 @@ export default function App() {
           }}
           onContentProcessDidTerminate={retry}
           onRenderProcessGone={retry}
-          onMessage={() => undefined}
           webviewDebuggingEnabled={__DEV__}
         />
         {error && (
