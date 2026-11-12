@@ -134,8 +134,8 @@ export default function App() {
               setError(`The AIS website is temporarily unavailable (HTTP ${nativeEvent.statusCode}).`);
             }
           }}
-          onContentProcessDidTerminate={retry}
-          onRenderProcessGone={retry}
+          onContentProcessDidTerminate={() => retry()}
+          onRenderProcessGone={() => retry()}
           onMessage={() => undefined}
           webviewDebuggingEnabled={__DEV__}
         />
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   spinner: { marginTop: 30 },
   message: { marginTop: 12, color: "#829BB2", fontSize: 12, textAlign: "center" },
   errorOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 10,
     alignItems: "center",
     justifyContent: "center",
