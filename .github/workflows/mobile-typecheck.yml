@@ -3,7 +3,7 @@ name: Mobile typecheck
 on:
   push:
     branches:
-      - feature/native-app-entry-and-foundation-2026-11-11
+      - ais-android-clean-rebuild-2026-11-18
   pull_request:
     paths:
       - "mobile/**"
